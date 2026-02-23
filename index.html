@@ -64,7 +64,7 @@
         border-radius: 6px; 
         width: 100%; 
         font-size: 14px; 
-        font-weight: normal; 
+        font-weight: 500; 
         cursor: pointer; 
         transition: 0.2s;
     }
@@ -99,13 +99,11 @@
         display: flex; 
         flex-direction: column; 
         gap: 4px; 
-        flex: 1;
     }
     
     .post-name { 
         font-weight: 500; 
         color: #333; 
-        font-size: 15px;
     }
     
     .post-email { 
@@ -123,8 +121,6 @@
         align-items: center; 
         gap: 4px; 
         padding: 5px 10px;
-        width: auto;
-        margin: 0;
     }
     
     .like-btn:hover { 
@@ -132,16 +128,18 @@
         color: #FFA000; 
     }
     
-    .time { 
-        font-size: 11px; 
-        color: #999; 
-        margin-top: 2px; 
+    .error-message {
+        color: #f44336;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
     }
     
-    hr {
-        margin: 20px 0;
-        border: none;
-        border-top: 1px solid #e0e0e0;
+    .success-message {
+        color: #4caf50;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
     }
     </style>
 </head>
@@ -150,93 +148,150 @@
         <h3>Панель управления данными</h3>
         <div class="form-group">
             <label for="name">Имя профиля</label>
-            <input type="text" id="name" placeholder="Имя профиля">
+            <input type="text" id="name" placeholder="Введите имя">
         </div>
         <div class="form-group">
             <label for="email">Рабочий Email</label>
-            <input type="email" id="email" placeholder="Рабочий Email">
+            <input type="email" id="email" placeholder="Введите email">
         </div>
         <button id="mainBtn">Опубликовать в облако</button>
+        <div id="errorMsg" class="error-message"></div>
+        <div id="successMsg" class="success-message"></div>
     </div>
     
     <div id="feed"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/18.7.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import {
             getFirestore, collection, addDoc, query, orderBy, onSnapshot,
             serverTimestamp, updateDoc, doc, increment
-        } from "https://www.gstatic.com/firebasejs/18.7.0/firebase-firestore.js";
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // КОНФИГУРАЦИЯ
+        // ВАШИ ДАННЫЕ FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAMMgGxN27p0FYmp-LVMmKw5KJbvFM-KhQ",
-  authDomain: "project1-c17c1.firebaseapp.com",
-  projectId: "project1-c17c1",
-  storageBucket: "project1-c17c1.firebasestorage.app",
-  messagingSenderId: "774031073336",
-  appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
-  measurementId: "G-GKXVQK98QR"
+            authDomain: "project1-c17c1.firebaseapp.com",
+            projectId: "project1-c17c1",
+            storageBucket: "project1-c17c1.firebasestorage.app",
+            messagingSenderId: "774031073336",
+            appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
+            measurementId: "G-GKXVQK98QR"
         };
 
+        // ИНИЦИАЛИЗАЦИЯ FIREBASE
+        console.log("Инициализация Firebase...");
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        console.log("Firebase инициализирован");
 
-        // МЕТОД: АТОМАРНОЕ ОБНОВЛЕНИЕ (LIKES)
+        // МЕТОД: ЛАЙКИ
         window.processLike = async (id) => {
+            console.log("Лайк для документа:", id);
             const docRef = doc(db, "requests", id);
             try {
                 await updateDoc(docRef, { likes: increment(1) });
+                console.log("Лайк добавлен");
             } catch (error) {
-                console.error("Error updating document:", error);
+                console.error("Ошибка при добавлении лайка:", error);
+                alert("Ошибка при добавлении лайка: " + error.message);
             }
         };
 
-        // МЕТОД: ЗАПИСЬ
+        // МЕТОД: ПУБЛИКАЦИЯ
         document.getElementById('mainBtn').onclick = async () => {
-            const bta = document.getElementById('mainBtn');
+            console.log("Кнопка нажата");
+            
             const nameInput = document.getElementById('name');
             const emailInput = document.getElementById('email');
+            const errorDiv = document.getElementById('errorMsg');
+            const successDiv = document.getElementById('successMsg');
             
-            if (!nameInput.value.trim() || !emailInput.value.trim()) {
-                alert("Пожалуйста, заполните все поля");
+            // Скрываем предыдущие сообщения
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            // Проверка полей
+            if (!nameInput.value.trim()) {
+                errorDiv.textContent = "Введите имя профиля";
+                errorDiv.style.display = 'block';
                 return;
             }
             
-            bta.disabled = true;
+            if (!emailInput.value.trim()) {
+                errorDiv.textContent = "Введите рабочий email";
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Простая проверка email
+            if (!emailInput.value.includes('@') || !emailInput.value.includes('.')) {
+                errorDiv.textContent = "Введите корректный email";
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            const button = document.getElementById('mainBtn');
+            button.disabled = true;
+            button.textContent = "Публикация...";
             
             try {
-                await addDoc(collection(db, "requests"), {
+                console.log("Отправка данных:", {
+                    name: nameInput.value.trim(),
+                    email: emailInput.value.trim()
+                });
+                
+                const docRef = await addDoc(collection(db, "requests"), {
                     name: nameInput.value.trim(),
                     email: emailInput.value.trim(),
                     likes: 0,
                     timestamp: serverTimestamp()
                 });
                 
+                console.log("Документ добавлен с ID:", docRef.id);
+                
+                // Очищаем поля
                 nameInput.value = "";
                 emailInput.value = "";
                 
+                // Показываем успех
+                successDiv.textContent = "Опубликовано успешно!";
+                successDiv.style.display = 'block';
+                
+                // Скрываем сообщение через 3 секунды
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 3000);
+                
             } catch (e) { 
-                console.error("Error adding document:", e);
-                alert("Ошибка при добавлении данных");
+                console.error("Ошибка при публикации:", e);
+                errorDiv.textContent = "Ошибка: " + e.message;
+                errorDiv.style.display = 'block';
             }
-            bta.disabled = false;
+            
+            button.disabled = false;
+            button.textContent = "Опубликовать в облако";
         };
 
         // REAL-TIME ОБНОВЛЕНИЯ
+        console.log("Подключение к коллекции requests...");
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         
         onSnapshot(q, (snapshot) => {
+            console.log("Получены данные, количество записей:", snapshot.size);
             const feed = document.getElementById('feed');
             feed.innerHTML = "";
             
             if (snapshot.empty) {
+                console.log("Нет записей");
                 return;
             }
             
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const postId = doc.id;
+                
+                console.log("Запись:", data.name, data.email, data.likes);
                 
                 const postElement = document.createElement('div');
                 postElement.className = 'post';
@@ -252,6 +307,8 @@
                 
                 feed.appendChild(postElement);
             });
+        }, (error) => {
+            console.error("Ошибка при получении данных:", error);
         });
     </script>
 </body>
