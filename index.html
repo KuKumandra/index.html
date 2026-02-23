@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ВадС</title>
+    <style>
+    body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+    .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
+    input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    button { background: #fff; border: none; padding: 12px; margin-top: 12px; border-radius: 4px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.1s ease-in-out; }
+    button:hover { background: #00bffa; color: white; }
+    .like-btn { cursor: pointer; border: none; background: #ff9a9a; padding: 5px 12px; border-radius: 4px; font-size: 14px; transition: 0.2s ease-in-out; margin-left: 10px; }
+    .like-btn:hover { background: #e2e6ea; }
+    .time { font-size: 11px; color: #999; float: right; }
+    .post { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .post-content { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Пишите управление данными</h3>
+        <input type="text" id="name" placeholder="Имя пользователя">
+        <input type="email" id="email" placeholder="Email">
+        <button id="mainBtn">Duybinexam</button>
+    </div>
+    
+    <div id="feed" style="width: 100%; max-width: 500px; margin-top: 20px;"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/18.7.0/firebase-app.js";
+        import {
+            getFirestore, collection, addDoc, query, orderBy, onSnapshot,
+            serverTimestamp, updateDoc, doc, increment
+        } from "https://www.gstatic.com/firebasejs/18.7.0/firebase-firestore.js";
+
+        // КОНФИГУРАЦИЯ
+        const firebaseConfig = {
+            apiKey: "AIzaSyAMMgGxN27p0FYmp-LVMmKw5KJbvFM-KhQ",
+            authDomain: "project1-c17c1.firebaseapp.com",
+            projectId: "project1-c17c1",
+            storageBucket: "project1-c17c1.firebasestorage.app",
+            messagingSenderId: "774031073336",
+            appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
+            measurementId: "G-GKXVQK98QR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // МЕТОД: АТОМАРНОЕ ОБНОВЛЕНИЕ (LIKES)
+        window.processLike = async (id) => {
+            const docRef = doc(db, "requests", id);
+            try {
+                await updateDoc(docRef, { likes: increment(1) });
+            } catch (error) {
+                console.error("Error updating document:", error);
+            }
+        };
+
+        // МЕТОД: ЗАПИСЬ С ВЫВОДАМИ
+        document.getElementById('mainBtn').onclick = async () => {
+            const bta = document.getElementById('mainBtn');
+            bta.disabled = true;
+            
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            
+            try {
+                if (!nameInput.value || !emailInput.value) {
+                    throw new Error("Пожалуйста, заполните все поля");
+                }
+                
+                await addDoc(collection(db, "requests"), {
+                    name: nameInput.value,
+                    email: emailInput.value,
+                    likes: 0,
+                    timestamp: serverTimestamp()
+                });
+                
+                // Очищаем только email, имя оставляем
+                emailInput.value = "";
+                
+            } catch (e) { 
+                console.error("Validation Error:", e.message);
+                alert("Ошибка: " + e.message);
+            }
+            bta.disabled = false;
+        };
+
+        // МЕТОД: REAL-TIME СОБРАНИЯ
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const postId = doc.id;
+                
+                // Форматируем время
+                let timeString = "только что";
+                if (data.timestamp) {
+                    try {
+                        timeString = data.timestamp.toDate().toLocaleString();
+                    } catch (e) {
+                        console.error("Error formatting time:", e);
+                    }
+                }
+                
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <div class="post-content">
+                        <strong>${data.name || 'Аноним'}</strong>
+                        <span>${data.email || ''}</span>
+                        <span class="time">${timeString}</span>
+                    </div>
+                    <button class="like-btn" onclick="processLike('${postId}')">
+                        ❤️ ${data.likes || 0}
+                    </button>
+                `;
+                
+                feed.appendChild(postElement);
+            });
+        });
+    </script>
+</body>
+</html>
