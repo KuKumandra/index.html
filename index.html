@@ -4,40 +4,159 @@
     <meta charset="UTF-8">
     <title>ВадС</title>
     <style>
-    body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-    .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
-    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-    input:focus { outline: none; border-color: #00bffa; }
-    button { background: #fff; border: 1px solid #ddd; padding: 12px; margin-top: 12px; border-radius: 4px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.1s ease-in-out; font-size: 16px; }
-    button:hover { background: #00bffa; color: white; border-color: #00bffa; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    .like-btn { cursor: pointer; border: none; background: #ff9a9a; padding: 5px 12px; border-radius: 4px; font-size: 14px; transition: 0.2s ease-in-out; margin-left: 10px; display: flex; align-items: center; gap: 4px; }
-    .like-btn:hover { background: #e2e6ea; }
-    .time { font-size: 11px; color: #999; }
-    .post { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .post-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex: 1; }
-    .post-info { display: flex; flex-direction: column; gap: 4px; }
-    .post-name { font-weight: 600; color: #333; }
-    .post-email { color: #666; font-size: 14px; }
-    .post-header { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-    #feed { width: 100%; max-width: 500px; margin-top: 20px; }
-    h3 { margin-top: 0; margin-bottom: 20px; color: #333; }
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        background: #f5f5f5; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 20px; 
+        margin: 0;
+    }
+    
+    .container { 
+        width: 100%; 
+        max-width: 500px; 
+        background: white; 
+        padding: 20px; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        margin-bottom: 20px;
+    }
+    
+    h3 { 
+        margin: 0 0 20px 0; 
+        font-size: 18px; 
+        font-weight: 500; 
+    }
+    
+    .form-group { 
+        margin-bottom: 15px; 
+    }
+    
+    label { 
+        display: block; 
+        margin-bottom: 5px; 
+        color: #666; 
+        font-size: 14px; 
+    }
+    
+    input { 
+        width: 100%; 
+        padding: 10px; 
+        border: 1px solid #e0e0e0; 
+        border-radius: 6px; 
+        box-sizing: border-box; 
+        font-size: 14px;
+        background: #fff;
+    }
+    
+    input:focus { 
+        outline: none; 
+        border-color: #2196F3; 
+    }
+    
+    button { 
+        background: #e0e0e0; 
+        color: #333; 
+        border: none; 
+        padding: 12px; 
+        border-radius: 6px; 
+        width: 100%; 
+        font-size: 14px; 
+        font-weight: normal; 
+        cursor: pointer; 
+        transition: 0.2s;
+    }
+    
+    button:hover { 
+        background: #2196F3; 
+        color: white; 
+    }
+    
+    button:disabled { 
+        opacity: 0.6; 
+        cursor: not-allowed; 
+    }
+    
+    #feed { 
+        width: 100%; 
+        max-width: 500px; 
+    }
+    
+    .post { 
+        background: white; 
+        padding: 15px; 
+        margin-bottom: 10px; 
+        border-radius: 8px; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between;
+    }
+    
+    .post-content { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 4px; 
+        flex: 1;
+    }
+    
+    .post-name { 
+        font-weight: 500; 
+        color: #333; 
+        font-size: 15px;
+    }
+    
+    .post-email { 
+        color: #666; 
+        font-size: 13px; 
+    }
+    
+    .like-btn { 
+        background: none; 
+        border: none; 
+        color: #FFB800; 
+        font-size: 15px; 
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        gap: 4px; 
+        padding: 5px 10px;
+        width: auto;
+        margin: 0;
+    }
+    
+    .like-btn:hover { 
+        background: none; 
+        color: #FFA000; 
+    }
+    
+    .time { 
+        font-size: 11px; 
+        color: #999; 
+        margin-top: 2px; 
+    }
+    
+    hr {
+        margin: 20px 0;
+        border: none;
+        border-top: 1px solid #e0e0e0;
+    }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3>Пишите управление данными</h3>
+        <h3>Панель управления данными</h3>
         <div class="form-group">
-            <label for="name">Имя пользователя</label>
-            <input type="text" id="name" placeholder="Введите имя">
+            <label for="name">Имя профиля</label>
+            <input type="text" id="name" placeholder="Имя профиля">
         </div>
         <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" placeholder="Введите email">
+            <label for="email">Рабочий Email</label>
+            <input type="email" id="email" placeholder="Рабочий Email">
         </div>
-        <button id="mainBtn">Duybinexam</button>
+        <button id="mainBtn">Опубликовать в облако</button>
     </div>
     
     <div id="feed"></div>
@@ -52,12 +171,12 @@
         // КОНФИГУРАЦИЯ
         const firebaseConfig = {
             apiKey: "AIzaSyAMMgGxN27p0FYmp-LVMmKw5KJbvFM-KhQ",
-            authDomain: "project1-c17c1.firebaseapp.com",
-            projectId: "project1-c17c1",
-            storageBucket: "project1-c17c1.firebasestorage.app",
-            messagingSenderId: "774031073336",
-            appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
-            measurementId: "G-GKXVQK98QR"
+  authDomain: "project1-c17c1.firebaseapp.com",
+  projectId: "project1-c17c1",
+  storageBucket: "project1-c17c1.firebasestorage.app",
+  messagingSenderId: "774031073336",
+  appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
+  measurementId: "G-GKXVQK98QR"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -70,26 +189,17 @@
                 await updateDoc(docRef, { likes: increment(1) });
             } catch (error) {
                 console.error("Error updating document:", error);
-                alert("Ошибка при обновлении лайка");
             }
         };
 
-        // МЕТОД: ЗАПИСЬ С ВЫВОДАМИ
+        // МЕТОД: ЗАПИСЬ
         document.getElementById('mainBtn').onclick = async () => {
             const bta = document.getElementById('mainBtn');
             const nameInput = document.getElementById('name');
             const emailInput = document.getElementById('email');
             
-            // Валидация
             if (!nameInput.value.trim() || !emailInput.value.trim()) {
                 alert("Пожалуйста, заполните все поля");
-                return;
-            }
-            
-            // Простая валидация email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(emailInput.value)) {
-                alert("Пожалуйста, введите корректный email");
                 return;
             }
             
@@ -103,7 +213,6 @@
                     timestamp: serverTimestamp()
                 });
                 
-                // Очищаем поля после успешной отправки
                 nameInput.value = "";
                 emailInput.value = "";
                 
@@ -114,7 +223,7 @@
             bta.disabled = false;
         };
 
-        // МЕТОД: REAL-TIME СОБРАНИЯ
+        // REAL-TIME ОБНОВЛЕНИЯ
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         
         onSnapshot(q, (snapshot) => {
@@ -122,7 +231,6 @@
             feed.innerHTML = "";
             
             if (snapshot.empty) {
-                feed.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Нет записей</div>';
                 return;
             }
             
@@ -130,72 +238,21 @@
                 const data = doc.data();
                 const postId = doc.id;
                 
-                // Форматируем время
-                let timeString = "только что";
-                if (data.timestamp) {
-                    try {
-                        const date = data.timestamp.toDate();
-                        const now = new Date();
-                        const diffMs = now - date;
-                        const diffMins = Math.floor(diffMs / 60000);
-                        const diffHours = Math.floor(diffMs / 3600000);
-                        const diffDays = Math.floor(diffMs / 86400000);
-                        
-                        if (diffMins < 1) {
-                            timeString = "только что";
-                        } else if (diffMins < 60) {
-                            timeString = `${diffMins} ${getMinutesWord(diffMins)} назад`;
-                        } else if (diffHours < 24) {
-                            timeString = `${diffHours} ${getHoursWord(diffHours)} назад`;
-                        } else if (diffDays < 7) {
-                            timeString = `${diffDays} ${getDaysWord(diffDays)} назад`;
-                        } else {
-                            timeString = date.toLocaleString();
-                        }
-                    } catch (e) {
-                        console.error("Error formatting time:", e);
-                        timeString = "недавно";
-                    }
-                }
-                
                 const postElement = document.createElement('div');
                 postElement.className = 'post';
                 postElement.innerHTML = `
                     <div class="post-content">
-                        <div class="post-info">
-                            <span class="post-name">${data.name || 'Аноним'}</span>
-                            <span class="post-email">${data.email || 'Нет email'}</span>
-                        </div>
-                        <span class="time">${timeString}</span>
+                        <span class="post-name">${data.name || 'Аноним'}</span>
+                        <span class="post-email">${data.email || 'Нет email'}</span>
                     </div>
                     <button class="like-btn" onclick="processLike('${postId}')">
-                        <span>❤️</span>
-                        <span>${data.likes || 0}</span>
+                        ⭐ ${data.likes || 0}
                     </button>
                 `;
                 
                 feed.appendChild(postElement);
             });
         });
-        
-        // Вспомогательные функции для склонения слов
-        function getMinutesWord(minutes) {
-            if (minutes % 10 === 1 && minutes % 100 !== 11) return 'минуту';
-            if ([2, 3, 4].includes(minutes % 10) && ![12, 13, 14].includes(minutes % 100)) return 'минуты';
-            return 'минут';
-        }
-        
-        function getHoursWord(hours) {
-            if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
-            if ([2, 3, 4].includes(hours % 10) && ![12, 13, 14].includes(hours % 100)) return 'часа';
-            return 'часов';
-        }
-        
-        function getDaysWord(days) {
-            if (days % 10 === 1 && days % 100 !== 11) return 'день';
-            if ([2, 3, 4].includes(days % 10) && ![12, 13, 14].includes(days % 100)) return 'дня';
-            return 'дней';
-        }
     </script>
 </body>
 </html>
