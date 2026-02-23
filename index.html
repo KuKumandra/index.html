@@ -2,265 +2,201 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ВадС - Firebase CRUD</title>
+    <title>Base с авторизацией</title>
     <style>
-    body { 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-        background: #f5f5f5; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        padding: 20px; 
-        margin: 0;
-    }
-    
-    .container { 
-        width: 100%; 
-        max-width: 500px; 
-        background: white; 
-        padding: 20px; 
-        border-radius: 12px; 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-        margin-bottom: 20px;
-    }
-    
-    h3 { 
-        margin: 0 0 20px 0; 
-        font-size: 18px; 
-        font-weight: 500; 
-    }
-    
-    .form-group { 
-        margin-bottom: 15px; 
-    }
-    
-    label { 
-        display: block; 
-        margin-bottom: 5px; 
-        color: #666; 
-        font-size: 14px; 
-    }
-    
-    input { 
-        width: 100%; 
-        padding: 10px; 
-        border: 1px solid #e0e0e0; 
-        border-radius: 6px; 
-        box-sizing: border-box; 
-        font-size: 14px;
-        background: #fff;
-    }
-    
-    input:focus { 
-        outline: none; 
-        border-color: #2196F3; 
-    }
-    
-    button { 
-        background: #e0e0e0; 
-        color: #333; 
-        border: none; 
-        padding: 12px; 
-        border-radius: 6px; 
-        width: 100%; 
-        font-size: 14px; 
-        font-weight: 500; 
-        cursor: pointer; 
-        transition: 0.2s;
-        margin-bottom: 10px;
-    }
-    
-    button:hover { 
-        background: #2196F3; 
-        color: white; 
-    }
-    
-    button:disabled { 
-        opacity: 0.6; 
-        cursor: not-allowed; 
-    }
-    
-    #feed { 
-        width: 100%; 
-        max-width: 500px; 
-    }
-    
-    .post { 
-        background: white; 
-        padding: 15px; 
-        margin-bottom: 10px; 
-        border-radius: 8px; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between;
-    }
-    
-    .post-content { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 4px; 
-    }
-    
-    .post-name { 
-        font-weight: 500; 
-        color: #333; 
-    }
-    
-    .post-email { 
-        color: #666; 
-        font-size: 13px; 
-    }
-    
-    .like-btn { 
-        background: none; 
-        border: none; 
-        color: #FFB800; 
-        font-size: 15px; 
-        cursor: pointer; 
-        display: flex; 
-        align-items: center; 
-        gap: 4px; 
-        padding: 5px 10px;
-        width: auto;
-        margin: 0;
-    }
-    
-    .like-btn:hover { 
-        background: none; 
-        color: #FFA000; 
-    }
-    
-    .error-message {
-        color: #f44336;
-        font-size: 12px;
-        margin-top: 5px;
-        display: none;
-    }
-    
-    .success-message {
-        color: #4caf50;
-        font-size: 12px;
-        margin-top: 5px;
-        display: none;
-    }
-    
-    .explanation {
-        background: #e3f2fd;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-    
-    .explanation h4 {
-        margin: 0 0 10px 0;
-        color: #1976d2;
-    }
-    
-    .code-block {
-        background: #f5f5f5;
-        padding: 10px;
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 12px;
-        overflow-x: auto;
-        margin: 10px 0;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f7ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .logout-btn {
+            background: #dc3545;
+        }
+        .logout-btn:hover {
+            background: #b02a37;
+        }
+        .auth-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .auth-section button {
+            flex: 1;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .user-email {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        .guest-message {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        .form-section {
+            transition: all 0.3s;
+        }
+        .post {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .post-author {
+            font-weight: 600;
+            color: #007bff;
+        }
+        .post-time {
+            color: #666;
+            font-size: 12px;
+        }
+        .post-content {
+            margin: 10px 0;
+        }
+        .post-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .post-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .like-btn {
+            background: none;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 5px 15px;
+            width: auto;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .like-btn:hover {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .list {
+            list-style-type: none;
+            margin: 20px 0 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h3>Панель управления данными</h3>
-        <div class="form-group">
-            <label for="name">Имя профиля</label>
-            <input type="text" id="name" placeholder="Введите имя">
-        </div>
-        <div class="form-group">
-            <label for="email">Рабочий Email</label>
-            <input type="email" id="email" placeholder="Введите email">
-        </div>
-        <button id="mainBtn">Опубликовать в облако (Функция 1)</button>
-        <div id="errorMsg" class="error-message"></div>
-        <div id="successMsg" class="success-message"></div>
-    </div>
-    
-    <div id="feed"></div>
-    
-    <div class="container explanation">
-        <h4>📘 Объяснение работы двух функций Firebase</h4>
-        
-        <p><strong>Функция 1: Добавление данных (Create)</strong></p>
-        <div class="code-block">
-// Код функции добавления:
-document.getElementById('mainBtn').onclick = async () => {
-    try {
-        await addDoc(collection(db, "requests"), {
-            name: document.getElementById('name').value,
-            email: document.getElementById('email').value,
-            likes: 0,
-            timestamp: serverTimestamp()
-        });
-    } catch (e) { 
-        console.error("Ошибка:", e);
-    }
-};
-        </div>
-        <p>Эта функция использует <code>addDoc()</code> для создания нового документа в коллекции "requests". 
-        Данные берутся из полей ввода, автоматически добавляется счетчик лайков (0) и временная метка 
-        <code>serverTimestamp()</code>, которая устанавливается сервером Firebase для точности времени.</p>
-        
-        <p><strong>Функция 2: Обновление лайков (Update)</strong></p>
-        <div class="code-block">
-// Код функции обновления:
-window.processLike = async (id) => {
-    const docRef = doc(db, "requests", id);
-    await updateDoc(docRef, { 
-        likes: increment(1) 
-    });
-};
-        </div>
-        <p>Эта функция использует <code>updateDoc()</code> с атомарной операцией <code>increment(1)</code>. 
-        Она принимает ID документа, создает ссылку на него через <code>doc()</code> и увеличивает значение 
-        поля "likes" на 1. Важно: <code>increment()</code> гарантирует корректность подсчета даже при 
-        одновременных нажатиях нескольких пользователей.</p>
-        
-        <p><strong>🔍 Дополнительно: Чтение в реальном времени (Read)</strong></p>
-        <div class="code-block">
-// Функция чтения:
-const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-onSnapshot(q, (snapshot) => {
-    // Автоматически обновляется при изменениях
-});
-        </div>
-        <p>Хотя это не требуется по заданию, здесь используется <code>onSnapshot()</code> для 
-        автоматического обновления интерфейса при любых изменениях в базе данных. Это демонстрирует 
-        мощь Firebase Real-time функциональности.</p>
-        
-        <p><strong>📊 Структура документа в Firestore:</strong></p>
-        <ul>
-            <li><code>name</code> (string) - имя пользователя</li>
-            <li><code>email</code> (string) - email пользователя</li>
-            <li><code>likes</code> (number) - счетчик лайков</li>
-            <li><code>timestamp</code> (timestamp) - время создания</li>
-        </ul>
-        
-        <p><strong>⚙️ Принцип работы:</strong> При нажатии кнопки "Опубликовать" срабатывает первая функция - 
-        создается новая запись. При нажатии на звездочку у любой записи срабатывает вторая функция - 
-        счетчик лайков увеличивается. Обе функции асинхронные и используют современный синтаксис 
-        async/await для обработки промисов.</p>
+<div class="container">
+    <h1>📝 Вопросы по базе данных</h1>
+   
+    <div id="authSection" class="auth-section">
+        <button id="loginBtn">🔐 Войти через Google</button>
+        <button id="logoutBtn" class="logout-btn" style="display: none;">🚪 Выйти</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import {
-            getFirestore, collection, addDoc, query, orderBy, onSnapshot,
-            serverTimestamp, updateDoc, doc, increment
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <div id="userInfo" class="user-info" style="display: none;">
+        <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+        <span id="userEmail" class="user-email"></span>
+    </div>
 
-        // ВАШИ ДАННЫЕ FIREBASE
-        const firebaseConfig = {
+    <div id="formSection" class="form-section" style="display: none;">
+        <input type="text" id="name" placeholder="Ваше имя" required>
+        <textarea id="message" placeholder="Ваш вопрос" rows="3" required></textarea>
+       
+        <input type="file" id="imageUpload" accept="image/*">
+        <div id="imagePreview" style="margin: 10px 0; display: none;">
+            <img id="previewImg" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
+        </div>
+       
+        <button id="submitBtn">📤 Отправить вопрос</button>
+    </div>
+
+    <div id="guestMessage" class="guest-message" style="display: none;">
+        👋 Пожалуйста, войдите через Google, чтобы задать вопрос
+    </div>
+
+    <div id="feed" class="list"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+    const firebaseConfig = {
             apiKey: "AIzaSyAMMgGxN27p0FYmp-LVMmKw5KJbvFM-KhQ",
             authDomain: "project1-c17c1.firebaseapp.com",
             projectId: "project1-c17c1",
@@ -268,115 +204,183 @@ onSnapshot(q, (snapshot) => {
             messagingSenderId: "774031073336",
             appId: "1:774031073336:web:4ecdc3ad60a52f076786cd",
             measurementId: "G-GKXVQK98QR"
-        };
+    };
 
-        // ИНИЦИАЛИЗАЦИЯ FIREBASE
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+    const provider = new GoogleAuthProvider();
 
-        // ========== ФУНКЦИЯ 1: ДОБАВЛЕНИЕ ДАННЫХ (CREATE) ==========
-        document.getElementById('mainBtn').onclick = async () => {
-            const nameInput = document.getElementById('name');
-            const emailInput = document.getElementById('email');
-            const errorDiv = document.getElementById('errorMsg');
-            const successDiv = document.getElementById('successMsg');
-            
-            // Валидация
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-            
-            if (!nameInput.value.trim() || !emailInput.value.trim()) {
-                errorDiv.textContent = "Заполните все поля";
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            const button = document.getElementById('mainBtn');
-            button.disabled = true;
-            button.textContent = "Публикация...";
-            
-            try {
-                // ОСНОВНАЯ ЛОГИКА ФУНКЦИИ 1: addDoc
-                const docRef = await addDoc(collection(db, "requests"), {
-                    name: nameInput.value.trim(),
-                    email: emailInput.value.trim(),
-                    likes: 0,                       // начальное значение лайков
-                    timestamp: serverTimestamp()     // временная метка сервера
-                });
-                
-                console.log("Функция 1 выполнена, ID документа:", docRef.id);
-                
-                // Очистка и уведомление
-                nameInput.value = "";
-                emailInput.value = "";
-                successDiv.textContent = "Опубликовано успешно!";
-                successDiv.style.display = 'block';
-                
-                setTimeout(() => {
-                    successDiv.style.display = 'none';
-                }, 3000);
-                
-            } catch (e) { 
-                console.error("Ошибка в Функции 1:", e);
-                errorDiv.textContent = "Ошибка: " + e.message;
-                errorDiv.style.display = 'block';
-            }
-            
-            button.disabled = false;
-            button.textContent = "Опубликовать в облако (Функция 1)";
-        };
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userAvatar = document.getElementById('userAvatar');
+    const userEmail = document.getElementById('userEmail');
+    const formSection = document.getElementById('formSection');
+    const guestMessage = document.getElementById('guestMessage');
+    const submitBtn = document.getElementById('submitBtn');
+    const nameInput = document.getElementById('name');
+    const messageInput = document.getElementById('message');
+    const imageUpload = document.getElementById('imageUpload');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const feed = document.getElementById('feed');
 
-        // ========== ФУНКЦИЯ 2: ОБНОВЛЕНИЕ ЛАЙКОВ (UPDATE) ==========
-        window.processLike = async (id) => {
-            console.log("Функция 2 вызвана для документа:", id);
-            
-            // Создаем ссылку на конкретный документ
-            const docRef = doc(db, "requests", id);
-            
-            try {
-                // ОСНОВНАЯ ЛОГИКА ФУНКЦИИ 2: updateDoc с increment
-                await updateDoc(docRef, { 
-                    likes: increment(1)      // атомарное увеличение на 1
-                });
-                
-                console.log("Функция 2 выполнена, лайк добавлен");
-                
-            } catch (error) {
-                console.error("Ошибка в Функции 2:", error);
-                alert("Ошибка при добавлении лайка: " + error.message);
-            }
-        };
+    imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
 
-        // ========== ЧТЕНИЕ ДАННЫХ (REAL-TIME) ==========
-        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-        
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
-            
-            if (snapshot.empty) {
-                return;
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'block';
+            userInfo.style.display = 'flex';
+            userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
+            userEmail.textContent = user.email;
+            formSection.style.display = 'block';
+            guestMessage.style.display = 'none';
+           
+            if (!nameInput.value) {
+                nameInput.value = user.displayName || 'Пользователь';
             }
-            
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const postId = doc.id;
-                
-                const postElement = document.createElement('div');
-                postElement.className = 'post';
-                postElement.innerHTML = `
-                    <div class="post-content">
-                        <span class="post-name">${data.name || 'Аноним'}</span>
-                        <span class="post-email">${data.email || 'Нет email'}</span>
-                    </div>
-                    <button class="like-btn" onclick="processLike('${postId}')">
-                        ⭐ ${data.likes || 0}
-                    </button>
-                `;
-                
-                feed.appendChild(postElement);
+        } else {
+            loginBtn.style.display = 'block';
+            logoutBtn.style.display = 'none';
+            userInfo.style.display = 'none';
+            formSection.style.display = 'none';
+            guestMessage.style.display = 'block';
+        }
+    });
+
+    loginBtn.addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            alert('Ошибка входа: ' + error.message);
+        }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            alert('Ошибка выхода: ' + error.message);
+        }
+    });
+
+    submitBtn.addEventListener('click', async () => {
+        if (!auth.currentUser) {
+            alert('Необходимо войти в систему');
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const message = messageInput.value.trim();
+       
+        if (!name || !message) {
+            alert('Заполните имя и вопрос');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка...';
+
+        try {
+            let imageUrl = null;
+           
+            const imageFile = imageUpload.files[0];
+            if (imageFile) {
+                const storageRef = ref(storage, `images/${Date.now()}_${imageFile.name}`);
+                await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(storageRef);
+            }
+
+            await addDoc(collection(db, "requests"), {
+                name: name,
+                message: message,
+                imageUrl: imageUrl,
+                userId: auth.currentUser.uid,
+                userEmail: auth.currentUser.email,
+                likes: 0,
+                timestamp: serverTimestamp()
             });
+
+            nameInput.value = '';
+            messageInput.value = '';
+            imageUpload.value = '';
+            imagePreview.style.display = 'none';
+           
+        } catch (e) {
+            console.error('Ошибка:', e);
+            alert('Ошибка безопасности. Данные отключены сервером.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📤 Отправить вопрос';
+        }
+    });
+
+    window.processLike = async (docId) => {
+        if (!auth.currentUser) {
+            alert('Необходимо войти в систему');
+            return;
+        }
+       
+        try {
+            const postRef = doc(db, "requests", docId);
+            await updateDoc(postRef, {
+                likes: increment(1)
+            });
+        } catch (error) {
+            console.error('Ошибка при лайке:', error);
+            alert('Не удалось поставить лайк');
+        }
+    };
+
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        feed.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+           
+            let timeStr = 'Только что';
+            if (data.timestamp?.toDate) {
+                const date = data.timestamp.toDate();
+                timeStr = date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+            }
+
+            const postHTML = `
+            <div class="post" data-id="${doc.id}">
+                <div class="post-header">
+                    <span class="post-author">${data.name || 'Аноним'}</span>
+                    <span class="post-time">${timeStr}</span>
+                </div>
+                <div class="post-content">${data.message || ''}</div>
+                ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="Post image">` : ''}
+                <div class="post-actions">
+                    <button class="like-btn" onclick="processLike('${doc.id}')">
+                        ❤️ ${data.likes || 0}
+                    </button>
+                    <span style="color: #666; font-size: 12px;">${data.userEmail || ''}</span>
+                </div>
+            </div>
+            `;
+           
+            feed.innerHTML += postHTML;
         });
-    </script>
+    });
+   
+</script>
+
 </body>
 </html>
