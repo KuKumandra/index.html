@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ВадС</title>
+    <title>ВадС - Firebase CRUD</title>
     <style>
     body { 
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -67,6 +67,7 @@
         font-weight: 500; 
         cursor: pointer; 
         transition: 0.2s;
+        margin-bottom: 10px;
     }
     
     button:hover { 
@@ -121,6 +122,8 @@
         align-items: center; 
         gap: 4px; 
         padding: 5px 10px;
+        width: auto;
+        margin: 0;
     }
     
     .like-btn:hover { 
@@ -141,6 +144,30 @@
         margin-top: 5px;
         display: none;
     }
+    
+    .explanation {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .explanation h4 {
+        margin: 0 0 10px 0;
+        color: #1976d2;
+    }
+    
+    .code-block {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-x: auto;
+        margin: 10px 0;
+    }
     </style>
 </head>
 <body>
@@ -154,12 +181,76 @@
             <label for="email">Рабочий Email</label>
             <input type="email" id="email" placeholder="Введите email">
         </div>
-        <button id="mainBtn">Опубликовать в облако</button>
+        <button id="mainBtn">Опубликовать в облако (Функция 1)</button>
         <div id="errorMsg" class="error-message"></div>
         <div id="successMsg" class="success-message"></div>
     </div>
     
     <div id="feed"></div>
+    
+    <div class="container explanation">
+        <h4>📘 Объяснение работы двух функций Firebase</h4>
+        
+        <p><strong>Функция 1: Добавление данных (Create)</strong></p>
+        <div class="code-block">
+// Код функции добавления:
+document.getElementById('mainBtn').onclick = async () => {
+    try {
+        await addDoc(collection(db, "requests"), {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            likes: 0,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) { 
+        console.error("Ошибка:", e);
+    }
+};
+        </div>
+        <p>Эта функция использует <code>addDoc()</code> для создания нового документа в коллекции "requests". 
+        Данные берутся из полей ввода, автоматически добавляется счетчик лайков (0) и временная метка 
+        <code>serverTimestamp()</code>, которая устанавливается сервером Firebase для точности времени.</p>
+        
+        <p><strong>Функция 2: Обновление лайков (Update)</strong></p>
+        <div class="code-block">
+// Код функции обновления:
+window.processLike = async (id) => {
+    const docRef = doc(db, "requests", id);
+    await updateDoc(docRef, { 
+        likes: increment(1) 
+    });
+};
+        </div>
+        <p>Эта функция использует <code>updateDoc()</code> с атомарной операцией <code>increment(1)</code>. 
+        Она принимает ID документа, создает ссылку на него через <code>doc()</code> и увеличивает значение 
+        поля "likes" на 1. Важно: <code>increment()</code> гарантирует корректность подсчета даже при 
+        одновременных нажатиях нескольких пользователей.</p>
+        
+        <p><strong>🔍 Дополнительно: Чтение в реальном времени (Read)</strong></p>
+        <div class="code-block">
+// Функция чтения:
+const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+onSnapshot(q, (snapshot) => {
+    // Автоматически обновляется при изменениях
+});
+        </div>
+        <p>Хотя это не требуется по заданию, здесь используется <code>onSnapshot()</code> для 
+        автоматического обновления интерфейса при любых изменениях в базе данных. Это демонстрирует 
+        мощь Firebase Real-time функциональности.</p>
+        
+        <p><strong>📊 Структура документа в Firestore:</strong></p>
+        <ul>
+            <li><code>name</code> (string) - имя пользователя</li>
+            <li><code>email</code> (string) - email пользователя</li>
+            <li><code>likes</code> (number) - счетчик лайков</li>
+            <li><code>timestamp</code> (timestamp) - время создания</li>
+        </ul>
+        
+        <p><strong>⚙️ Принцип работы:</strong> При нажатии кнопки "Опубликовать" срабатывает первая функция - 
+        создается новая запись. При нажатии на звездочку у любой записи срабатывает вторая функция - 
+        счетчик лайков увеличивается. Обе функции асинхронные и используют современный синтаксис 
+        async/await для обработки промисов.</p>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -180,53 +271,22 @@
         };
 
         // ИНИЦИАЛИЗАЦИЯ FIREBASE
-        console.log("Инициализация Firebase...");
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        console.log("Firebase инициализирован");
 
-        // МЕТОД: ЛАЙКИ
-        window.processLike = async (id) => {
-            console.log("Лайк для документа:", id);
-            const docRef = doc(db, "requests", id);
-            try {
-                await updateDoc(docRef, { likes: increment(1) });
-                console.log("Лайк добавлен");
-            } catch (error) {
-                console.error("Ошибка при добавлении лайка:", error);
-                alert("Ошибка при добавлении лайка: " + error.message);
-            }
-        };
-
-        // МЕТОД: ПУБЛИКАЦИЯ
+        // ========== ФУНКЦИЯ 1: ДОБАВЛЕНИЕ ДАННЫХ (CREATE) ==========
         document.getElementById('mainBtn').onclick = async () => {
-            console.log("Кнопка нажата");
-            
             const nameInput = document.getElementById('name');
             const emailInput = document.getElementById('email');
             const errorDiv = document.getElementById('errorMsg');
             const successDiv = document.getElementById('successMsg');
             
-            // Скрываем предыдущие сообщения
+            // Валидация
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
             
-            // Проверка полей
-            if (!nameInput.value.trim()) {
-                errorDiv.textContent = "Введите имя профиля";
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            if (!emailInput.value.trim()) {
-                errorDiv.textContent = "Введите рабочий email";
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            // Простая проверка email
-            if (!emailInput.value.includes('@') || !emailInput.value.includes('.')) {
-                errorDiv.textContent = "Введите корректный email";
+            if (!nameInput.value.trim() || !emailInput.value.trim()) {
+                errorDiv.textContent = "Заполните все поля";
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -236,62 +296,71 @@
             button.textContent = "Публикация...";
             
             try {
-                console.log("Отправка данных:", {
-                    name: nameInput.value.trim(),
-                    email: emailInput.value.trim()
-                });
-                
+                // ОСНОВНАЯ ЛОГИКА ФУНКЦИИ 1: addDoc
                 const docRef = await addDoc(collection(db, "requests"), {
                     name: nameInput.value.trim(),
                     email: emailInput.value.trim(),
-                    likes: 0,
-                    timestamp: serverTimestamp()
+                    likes: 0,                       // начальное значение лайков
+                    timestamp: serverTimestamp()     // временная метка сервера
                 });
                 
-                console.log("Документ добавлен с ID:", docRef.id);
+                console.log("Функция 1 выполнена, ID документа:", docRef.id);
                 
-                // Очищаем поля
+                // Очистка и уведомление
                 nameInput.value = "";
                 emailInput.value = "";
-                
-                // Показываем успех
                 successDiv.textContent = "Опубликовано успешно!";
                 successDiv.style.display = 'block';
                 
-                // Скрываем сообщение через 3 секунды
                 setTimeout(() => {
                     successDiv.style.display = 'none';
                 }, 3000);
                 
             } catch (e) { 
-                console.error("Ошибка при публикации:", e);
+                console.error("Ошибка в Функции 1:", e);
                 errorDiv.textContent = "Ошибка: " + e.message;
                 errorDiv.style.display = 'block';
             }
             
             button.disabled = false;
-            button.textContent = "Опубликовать в облако";
+            button.textContent = "Опубликовать в облако (Функция 1)";
         };
 
-        // REAL-TIME ОБНОВЛЕНИЯ
-        console.log("Подключение к коллекции requests...");
+        // ========== ФУНКЦИЯ 2: ОБНОВЛЕНИЕ ЛАЙКОВ (UPDATE) ==========
+        window.processLike = async (id) => {
+            console.log("Функция 2 вызвана для документа:", id);
+            
+            // Создаем ссылку на конкретный документ
+            const docRef = doc(db, "requests", id);
+            
+            try {
+                // ОСНОВНАЯ ЛОГИКА ФУНКЦИИ 2: updateDoc с increment
+                await updateDoc(docRef, { 
+                    likes: increment(1)      // атомарное увеличение на 1
+                });
+                
+                console.log("Функция 2 выполнена, лайк добавлен");
+                
+            } catch (error) {
+                console.error("Ошибка в Функции 2:", error);
+                alert("Ошибка при добавлении лайка: " + error.message);
+            }
+        };
+
+        // ========== ЧТЕНИЕ ДАННЫХ (REAL-TIME) ==========
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         
         onSnapshot(q, (snapshot) => {
-            console.log("Получены данные, количество записей:", snapshot.size);
             const feed = document.getElementById('feed');
             feed.innerHTML = "";
             
             if (snapshot.empty) {
-                console.log("Нет записей");
                 return;
             }
             
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const postId = doc.id;
-                
-                console.log("Запись:", data.name, data.email, data.likes);
                 
                 const postElement = document.createElement('div');
                 postElement.className = 'post';
@@ -307,8 +376,6 @@
                 
                 feed.appendChild(postElement);
             });
-        }, (error) => {
-            console.error("Ошибка при получении данных:", error);
         });
     </script>
 </body>
