@@ -32,9 +32,14 @@
             cursor: pointer;
             font-size: 14px;
             margin: 5px 0;
+            transition: 0.2s;
         }
         button:hover {
             background: #0056b3;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
         .logout-btn {
             background: #dc3545;
@@ -46,6 +51,9 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+        }
+        .auth-section button {
+            flex: 1;
         }
         .user-info {
             display: flex;
@@ -151,16 +159,30 @@
             padding: 40px 20px;
             color: #666;
         }
-        .header-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
         }
-        .refresh-btn {
-            width: auto;
-            padding: 5px 15px;
-            background: #28a745;
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .debug-info {
+            background: #e2e3e5;
+            color: #383d41;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 12px;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -168,6 +190,10 @@
 <div class="container">
     <h1>💬 Личные сообщения</h1>
    
+    <div id="errorContainer" style="display: none;" class="error-message"></div>
+    <div id="successContainer" style="display: none;" class="success-message"></div>
+    <div id="debugContainer" style="display: none;" class="debug-info"></div>
+
     <div class="auth-section">
         <button id="loginBtn">🔐 Войти через Google</button>
         <button id="logoutBtn" class="logout-btn" style="display: none;">🚪 Выйти</button>
@@ -191,9 +217,9 @@
 
         <!-- Список пользователей -->
         <div id="usersSection" style="display: none;">
-            <div class="header-controls">
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                 <h3 style="margin: 0;">Все пользователи</h3>
-                <button id="refreshUsersBtn" class="refresh-btn">🔄 Обновить</button>
+                <button id="refreshUsersBtn" style="width: auto; padding: 5px 15px; background: #28a745;">🔄 Обновить</button>
             </div>
             <div id="usersList" class="users-list"></div>
         </div>
@@ -204,7 +230,7 @@
             <div id="chatHeader" style="margin: 15px 0;"></div>
             <div id="messagesContainer" class="messages-container"></div>
             <div style="margin-top: 20px;">
-                <textarea id="messageInput" placeholder="Введите сообщение..." rows="2" style="width: 100%;"></textarea>
+                <textarea id="messageInput" placeholder="Введите сообщение..." rows="2" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;"></textarea>
                 <button id="sendBtn">📤 Отправить</button>
             </div>
         </div>
@@ -229,10 +255,16 @@
         appId: "1:774031073336:web:4ecdc3ad60a52f076786cd"
     };
 
+    // Инициализация Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+
+    // Настройка провайдера
+    provider.setCustomParameters({
+        prompt: 'select_account'
+    });
 
     // Элементы DOM
     const loginBtn = document.getElementById('loginBtn');
@@ -253,11 +285,36 @@
     const sendBtn = document.getElementById('sendBtn');
     const refreshUsersBtn = document.getElementById('refreshUsersBtn');
     const chatHeader = document.getElementById('chatHeader');
+    const errorContainer = document.getElementById('errorContainer');
+    const successContainer = document.getElementById('successContainer');
+    const debugContainer = document.getElementById('debugContainer');
 
     let currentUser = null;
     let selectedUserId = null;
     let currentChatId = null;
     let unsubscribeMessages = null;
+
+    // Функции для отображения сообщений
+    function showError(message) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = 'block';
+        setTimeout(() => {
+            errorContainer.style.display = 'none';
+        }, 5000);
+    }
+
+    function showSuccess(message) {
+        successContainer.textContent = message;
+        successContainer.style.display = 'block';
+        setTimeout(() => {
+            successContainer.style.display = 'none';
+        }, 3000);
+    }
+
+    function showDebug(info) {
+        debugContainer.textContent = info;
+        debugContainer.style.display = 'block';
+    }
 
     // Переключение вкладок
     window.switchTab = (tab) => {
@@ -290,6 +347,7 @@
             const snapshot = await getDocs(usersQuery);
             
             console.log('Найдено пользователей:', snapshot.size);
+            showDebug(`Найдено пользователей: ${snapshot.size}`);
             
             if (snapshot.empty) {
                 usersList.innerHTML = '<div class="empty-state">Нет других пользователей</div>';
@@ -300,8 +358,6 @@
             snapshot.forEach((doc) => {
                 if (doc.id !== currentUser.uid) {
                     const userData = doc.data();
-                    console.log('Пользователь:', userData);
-                    
                     html += `
                         <div class="user-item" onclick="selectUser('${doc.id}', '${userData.displayName || 'Пользователь'}', '${userData.photoURL || ''}')">
                             <img src="${userData.photoURL || 'https://via.placeholder.com/45'}" class="user-avatar-small">
@@ -317,8 +373,9 @@
             usersList.innerHTML = html || '<div class="empty-state">Нет других пользователей</div>';
             
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Ошибка загрузки пользователей:', error);
             usersList.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+            showError('Ошибка загрузки пользователей: ' + error.message);
         }
     };
 
@@ -337,7 +394,7 @@
             const snapshot = await getDocs(chatsQuery);
             
             if (snapshot.empty) {
-                chatsList.innerHTML = '<div class="empty-state">Нет чатов</div>';
+                chatsList.innerHTML = '<div class="empty-state">У вас пока нет чатов</div>';
                 return;
             }
             
@@ -366,12 +423,12 @@
             chatsList.innerHTML = html || '<div class="empty-state">Нет чатов</div>';
             
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Ошибка загрузки чатов:', error);
             chatsList.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
         }
     };
 
-    // Выбор пользователя (глобальная функция)
+    // Выбор пользователя
     window.selectUser = (userId, userName, userPhoto) => {
         openChat(userId, { displayName: userName, photoURL: userPhoto });
     };
@@ -390,63 +447,76 @@
         const chatId = [currentUser.uid, userId].sort().join('_');
         currentChatId = chatId;
         
-        const chatRef = doc(db, "chats", chatId);
-        const chatDoc = await getDoc(chatRef);
-        
-        if (!chatDoc.exists()) {
-            await setDoc(chatRef, {
-                participants: [currentUser.uid, userId],
-                createdAt: serverTimestamp()
-            });
-        }
-        
-        if (unsubscribeMessages) {
-            unsubscribeMessages();
-        }
-        
-        const messagesQuery = query(
-            collection(db, "chats", chatId, "messages"),
-            orderBy("timestamp", "asc")
-        );
-        
-        unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
-            messagesContainer.innerHTML = '';
+        try {
+            const chatRef = doc(db, "chats", chatId);
+            const chatDoc = await getDoc(chatRef);
             
-            if (snapshot.empty) {
-                messagesContainer.innerHTML = '<div class="empty-state">Нет сообщений</div>';
-                return;
+            if (!chatDoc.exists()) {
+                await setDoc(chatRef, {
+                    participants: [currentUser.uid, userId],
+                    createdAt: serverTimestamp()
+                });
             }
             
-            snapshot.forEach((doc) => {
-                const msg = doc.data();
-                const div = document.createElement('div');
-                div.className = `message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}`;
-                div.innerHTML = `
-                    <div>${msg.text || ''}</div>
-                    <div class="message-time">
-                        ${msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString() : ''}
-                    </div>
-                `;
-                messagesContainer.appendChild(div);
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+            }
+            
+            const messagesQuery = query(
+                collection(db, "chats", chatId, "messages"),
+                orderBy("timestamp", "asc")
+            );
+            
+            unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+                messagesContainer.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    messagesContainer.innerHTML = '<div class="empty-state">Нет сообщений. Напишите первое сообщение!</div>';
+                    return;
+                }
+                
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    const div = document.createElement('div');
+                    div.className = `message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}`;
+                    
+                    let timeStr = '';
+                    if (msg.timestamp?.toDate) {
+                        timeStr = msg.timestamp.toDate().toLocaleTimeString();
+                    }
+                    
+                    div.innerHTML = `
+                        <div>${msg.text || ''}</div>
+                        <div class="message-time">${timeStr}</div>
+                    `;
+                    messagesContainer.appendChild(div);
+                });
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
             
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
-        
-        chatsSection.style.display = 'none';
-        usersSection.style.display = 'none';
-        chatSection.style.display = 'block';
+            chatsSection.style.display = 'none';
+            usersSection.style.display = 'none';
+            chatSection.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Ошибка открытия чата:', error);
+            showError('Ошибка открытия чата: ' + error.message);
+        }
     };
 
     // Отправка сообщения
     sendBtn.addEventListener('click', async () => {
         if (!currentUser || !selectedUserId || !currentChatId) {
-            alert('Ошибка');
+            showError('Ошибка: выберите получателя');
             return;
         }
 
         const text = messageInput.value.trim();
-        if (!text) return;
+        if (!text) {
+            showError('Введите сообщение');
+            return;
+        }
 
         sendBtn.disabled = true;
         sendBtn.textContent = 'Отправка...';
@@ -460,10 +530,11 @@
             });
 
             messageInput.value = '';
+            showSuccess('Сообщение отправлено');
            
         } catch (e) {
-            console.error('Ошибка:', e);
-            alert('Ошибка при отправке');
+            console.error('Ошибка отправки:', e);
+            showError('Ошибка при отправке: ' + e.message);
         } finally {
             sendBtn.disabled = false;
             sendBtn.textContent = '📤 Отправить';
@@ -488,20 +559,35 @@
     const saveUser = async (user) => {
         try {
             const userRef = doc(db, "users", user.uid);
-            await setDoc(userRef, {
+            const userData = {
                 email: user.email,
                 displayName: user.displayName || 'Пользователь',
                 photoURL: user.photoURL || 'https://via.placeholder.com/40',
-                lastSeen: serverTimestamp()
-            }, { merge: true });
-            console.log('Пользователь сохранен');
+                lastSeen: serverTimestamp(),
+                uid: user.uid
+            };
+            
+            await setDoc(userRef, userData, { merge: true });
+            console.log('Пользователь сохранен:', userData);
+            showDebug('Пользователь сохранен в БД');
+            
+            // Проверяем сохранение
+            const savedUser = await getDoc(userRef);
+            if (savedUser.exists()) {
+                console.log('Пользователь найден в БД');
+            }
+            
         } catch (error) {
-            console.error('Ошибка сохранения:', error);
+            console.error('Ошибка сохранения пользователя:', error);
+            showError('Ошибка сохранения пользователя: ' + error.message);
         }
     };
 
     // Отслеживание входа
     onAuthStateChanged(auth, async (user) => {
+        console.log('Auth state changed:', user ? 'Пользователь вошел' : 'Пользователь вышел');
+        showDebug(`Статус: ${user ? 'Вошел' : 'Вышел'}`);
+        
         if (user) {
             currentUser = user;
             loginBtn.style.display = 'none';
@@ -514,6 +600,8 @@
             
             await saveUser(user);
             loadChats();
+            showSuccess(`Добро пожаловать, ${user.displayName || user.email}!`);
+            
         } else {
             currentUser = null;
             loginBtn.style.display = 'block';
@@ -521,11 +609,60 @@
             userInfo.style.display = 'none';
             mainContent.style.display = 'none';
             guestMessage.style.display = 'block';
+            
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+            }
         }
     });
 
-    loginBtn.addEventListener('click', () => signInWithPopup(auth, provider));
-    logoutBtn.addEventListener('click', () => signOut(auth));
+    // Обработка входа с улучшенной ошибкой
+    loginBtn.addEventListener('click', async () => {
+        try {
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Вход...';
+            
+            console.log('Попытка входа через Google...');
+            const result = await signInWithPopup(auth, provider);
+            
+            console.log('Вход успешен:', result.user.email);
+            showSuccess(`Успешный вход: ${result.user.email}`);
+            
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            
+            let errorMessage = 'Ошибка входа: ';
+            switch (error.code) {
+                case 'auth/popup-closed-by-user':
+                    errorMessage += 'Окно входа было закрыто';
+                    break;
+                case 'auth/cancelled-popup-request':
+                    errorMessage += 'Запрос отменен';
+                    break;
+                case 'auth/popup-blocked':
+                    errorMessage += 'Всплывающее окно заблокировано браузером';
+                    break;
+                default:
+                    errorMessage += error.message;
+            }
+            
+            showError(errorMessage);
+            
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = '🔐 Войти через Google';
+        }
+    });
+
+    // Выход
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            showSuccess('Вы вышли из аккаунта');
+        } catch (error) {
+            showError('Ошибка выхода: ' + error.message);
+        }
+    });
 
 </script>
 </body>
