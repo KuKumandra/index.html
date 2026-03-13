@@ -241,14 +241,14 @@
 
     <script>
         // ============================================
-        // ТВОИ ДАННЫЕ
+        // ТВОИ ДАННЫЕ - используем другие имена переменных
         // ============================================
-        const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
+        const MY_SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
+        const MY_SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
         const MY_USER_ID = '8e68144a-68de-4bff-ae47-762dce744422';
         
-        // Создаем клиент Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Создаем клиент Supabase - используем другое имя
+        const supabaseClient = window.supabase.createClient(MY_SUPABASE_URL, MY_SUPABASE_KEY);
         
         // ============================================
         // Глобальные переменные
@@ -290,7 +290,7 @@
         // ============================================
         async function loadProfiles() {
             try {
-                let query = supabase.from('profiles').select('*');
+                let query = supabaseClient.from('profiles').select('*');
                 
                 if (currentFilter === 'online') {
                     query = query.eq('status', 'online');
@@ -340,7 +340,7 @@
             }
             
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('profiles')
                     .update({ status: newStatus })
                     .eq('id', currentUser.id);
@@ -377,7 +377,7 @@
         // Вход по ID
         async function login(userId) {
             try {
-                const { data: profile, error } = await supabase
+                const { data: profile, error } = await supabaseClient
                     .from('profiles')
                     .select('*')
                     .eq('id', userId)
@@ -410,7 +410,7 @@
         // Подписка на изменения в реальном времени
         // ============================================
         function subscribeToChanges() {
-            supabase
+            supabaseClient
                 .channel('profiles_changes')
                 .on('postgres_changes', 
                     { event: '*', schema: 'public', table: 'profiles' },
@@ -464,9 +464,6 @@
             
             // Подписываемся на изменения
             subscribeToChanges();
-            
-            // Проверяем, может уже есть сохраненный пользователь
-            // (но для простоты начинаем с гостевого режима)
         }
         
         // Запускаем
