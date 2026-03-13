@@ -2,8 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Личные сообщения</title>
+    <title>Монитор статусов (Supabase)</title>
     <style>
+        /* Твои стили остаются практически без изменений, 
+           я лишь немного обновил цвета и текст под тему "Статусы" */
         body {
             font-family: 'Inter', sans-serif;
             background: #f4f7ff;
@@ -20,6 +22,10 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-top: 0;
+            color: #1e293b;
         }
         button {
             background: #007bff;
@@ -69,6 +75,22 @@
             height: 40px;
             border-radius: 50%;
         }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .status-badge.online {
+            background: #4ade80;
+            color: #166534;
+        }
+        .status-badge.offline {
+            background: #cbd5e1;
+            color: #334155;
+        }
         .tabs {
             display: flex;
             gap: 10px;
@@ -87,7 +109,7 @@
             color: #007bff;
             border-bottom: 2px solid #007bff;
         }
-        .users-list, .chats-list {
+        .profiles-list {
             max-height: 400px;
             overflow-y: auto;
             border: 1px solid #e0e0e0;
@@ -95,64 +117,59 @@
             padding: 10px;
             margin: 10px 0;
         }
-        .user-item, .chat-item {
+        .profile-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .profile-item:last-child {
+            border-bottom: none;
+        }
+        .profile-info {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
-            cursor: pointer;
         }
-        .user-item:hover, .chat-item:hover {
-            background: #f8f9fa;
-        }
-        .user-avatar-small {
+        .profile-avatar {
             width: 45px;
             height: 45px;
             border-radius: 50%;
+            background: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #475569;
         }
-        .user-name {
+        .profile-name {
             font-weight: 600;
         }
-        .user-email-small {
-            font-size: 12px;
-            color: #666;
-        }
-        .messages-container {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
+        .status-selector {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
         }
-        .message {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            word-wrap: break-word;
+        .status-selector button {
+            flex: 1;
+            margin: 0;
         }
-        .message.sent {
-            align-self: flex-end;
-            background: #007bff;
-            color: white;
+        .status-btn {
+            background: #e2e8f0;
+            color: #1e293b;
         }
-        .message.received {
-            align-self: flex-start;
-            background: #f1f3f5;
+        .status-btn.active {
+            outline: 2px solid #007bff;
         }
-        .message-time {
-            font-size: 10px;
-            margin-top: 5px;
-            opacity: 0.7;
+        .status-btn.online {
+            background: #4ade80;
         }
-        .back-btn {
-            background: #6c757d;
-            width: auto;
-            padding: 8px 20px;
+        .status-btn.offline {
+            background: #cbd5e1;
         }
         .empty-state {
             text-align: center;
@@ -188,113 +205,98 @@
 </head>
 <body>
 <div class="container">
-    <h1>💬 Личные сообщения</h1>
-   
+    <h1>👥 Монитор статусов (Supabase)</h1>
+
     <div id="errorContainer" style="display: none;" class="error-message"></div>
     <div id="successContainer" style="display: none;" class="success-message"></div>
     <div id="debugContainer" style="display: none;" class="debug-info"></div>
 
     <div class="auth-section">
-        <button id="loginBtn">🔐 Войти через Google</button>
-        <button id="logoutBtn" class="logout-btn" style="display: none;">🚪 Выйти</button>
+        <button id="loginBtn" style="display: none;">👤 Войти как тестовый пользователь</button>
+        <button id="logoutBtn" class="logout-btn">🚪 Выйти (очистить localStorage)</button>
     </div>
 
     <div id="userInfo" class="user-info" style="display: none;">
-        <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
-        <span id="userEmail" class="user-email"></span>
+        <div id="userAvatar" class="user-avatar" style="background: #007bff; color: white; display: flex; align-items: center; justify-content: center;">👤</div>
+        <div>
+            <span id="userDisplayName" class="user-name"></span>
+            <span id="userStatusBadge" class="status-badge">загрузка...</span>
+        </div>
     </div>
 
-    <div id="mainContent" style="display: none;">
+    <!-- Панель управления статусом (для текущего пользователя) -->
+    <div id="statusSelector" class="status-selector" style="display: none;">
+        <button id="setOnlineBtn" class="status-btn online">🟢 В сети</button>
+        <button id="setOfflineBtn" class="status-btn offline">⚫ Не в сети</button>
+    </div>
+
+    <div id="mainContent">
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('chats')">💬 Чаты</div>
-            <div class="tab" onclick="switchTab('users')">👥 Пользователи</div>
+            <div class="tab active" onclick="switchTab('all')">📋 Все профили</div>
+            <div class="tab" onclick="switchTab('online')">🟢 Онлайн</div>
         </div>
 
-        <!-- Список чатов -->
-        <div id="chatsSection">
-            <div id="chatsList" class="chats-list"></div>
-        </div>
-
-        <!-- Список пользователей -->
-        <div id="usersSection" style="display: none;">
+        <!-- Список профилей -->
+        <div id="profilesSection">
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0;">Все пользователи</h3>
-                <button id="refreshUsersBtn" style="width: auto; padding: 5px 15px; background: #28a745;">🔄 Обновить</button>
+                <h3 style="margin: 0;" id="profilesTitle">Все пользователи</h3>
+                <button id="refreshProfilesBtn" style="width: auto; padding: 5px 15px; background: #28a745;">🔄 Обновить</button>
             </div>
-            <div id="usersList" class="users-list"></div>
-        </div>
-
-        <!-- Окно чата -->
-        <div id="chatSection" style="display: none;">
-            <button id="backBtn" class="back-btn">← Назад</button>
-            <div id="chatHeader" style="margin: 15px 0;"></div>
-            <div id="messagesContainer" class="messages-container"></div>
-            <div style="margin-top: 20px;">
-                <textarea id="messageInput" placeholder="Введите сообщение..." rows="2" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;"></textarea>
-                <button id="sendBtn">📤 Отправить</button>
-            </div>
+            <div id="profilesList" class="profiles-list"></div>
         </div>
     </div>
 
     <div id="guestMessage" class="empty-state">
-        👋 Пожалуйста, войдите через Google
+        👋 Добро пожаловать! Это демо-режим.<br>
+        <small>Нажмите "Выйти" и войдите снова, чтобы сменить пользователя.</small>
     </div>
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDocs, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    // ============================================
+    // 1. ПОДСТАВЬ СВОИ КЛЮЧИ SUPABASE ЗДЕСЬ
+    // ============================================
+    const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co'; // Например: https://xyzabc.supabase.co
+    const SUPABASE_ANON_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9'; // Найдешь в Project Settings -> API
+    
+    // Импорт библиотеки Supabase
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAMMgGxN27p0FYmp-LVMmKw5KJbvFM-KhQ",
-        authDomain: "project1-c17c1.firebaseapp.com",
-        projectId: "project1-c17c1",
-        storageBucket: "project1-c17c1.firebasestorage.app",
-        messagingSenderId: "774031073336",
-        appId: "1:774031073336:web:4ecdc3ad60a52f076786cd"
-    };
+    // Создаем клиент Supabase
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Инициализация Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    // Настройка провайдера
-    provider.setCustomParameters({
-        prompt: 'select_account'
-    });
-
-    // Элементы DOM
+    // ============================================
+    // 2. Элементы DOM
+    // ============================================
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const userInfo = document.getElementById('userInfo');
     const userAvatar = document.getElementById('userAvatar');
-    const userEmail = document.getElementById('userEmail');
+    const userDisplayName = document.getElementById('userDisplayName');
+    const userStatusBadge = document.getElementById('userStatusBadge');
+    const statusSelector = document.getElementById('statusSelector');
     const mainContent = document.getElementById('mainContent');
     const guestMessage = document.getElementById('guestMessage');
-    const chatsSection = document.getElementById('chatsSection');
-    const usersSection = document.getElementById('usersSection');
-    const chatSection = document.getElementById('chatSection');
-    const chatsList = document.getElementById('chatsList');
-    const usersList = document.getElementById('usersList');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const backBtn = document.getElementById('backBtn');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const refreshUsersBtn = document.getElementById('refreshUsersBtn');
-    const chatHeader = document.getElementById('chatHeader');
+    const profilesList = document.getElementById('profilesList');
+    const refreshProfilesBtn = document.getElementById('refreshProfilesBtn');
     const errorContainer = document.getElementById('errorContainer');
     const successContainer = document.getElementById('successContainer');
     const debugContainer = document.getElementById('debugContainer');
+    const profilesTitle = document.getElementById('profilesTitle');
+    
+    const setOnlineBtn = document.getElementById('setOnlineBtn');
+    const setOfflineBtn = document.getElementById('setOfflineBtn');
 
-    let currentUser = null;
-    let selectedUserId = null;
-    let currentChatId = null;
-    let unsubscribeMessages = null;
+    // ============================================
+    // 3. Глобальные переменные
+    // ============================================
+    let currentUser = null;         // Профиль текущего пользователя из таблицы profiles
+    let currentFilter = 'all';      // 'all' или 'online'
+    let realtimeSubscription = null;
 
-    // Функции для отображения сообщений
+    // ============================================
+    // 4. Вспомогательные функции
+    // ============================================
     function showError(message) {
         errorContainer.textContent = message;
         errorContainer.style.display = 'block';
@@ -316,354 +318,315 @@
         debugContainer.style.display = 'block';
     }
 
+    // Функция для получения инициалов
+    function getInitials(name) {
+        if (!name) return '?';
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    // ============================================
+    // 5. Работа с тестовыми пользователями (т.к. нет Google Auth)
+    // ============================================
+    // Список тестовых пользователей, которых мы добавили в таблицу profiles
+    const TEST_USERS = [
+        { id: '8e68144a-68de-4bff-ae47-762dce744422', username: 'kumandra' },
+    ];
+
+    // Функция для входа (имитация, так как нет реальной аутентификации)
+    async function loginAsTestUser(userId) {
+        try {
+            // Получаем профиль пользователя из таблицы profiles
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+            
+            if (profile) {
+                // Сохраняем в localStorage, чтобы запомнить пользователя
+                localStorage.setItem('currentUserId', profile.id);
+                currentUser = profile;
+                await updateUIForUser(profile);
+                showSuccess(`Вошел как ${profile.username}`);
+            }
+        } catch (error) {
+            showError('Ошибка входа: ' + error.message);
+        }
+    }
+
+    // Выход
+    function logout() {
+        localStorage.removeItem('currentUserId');
+        currentUser = null;
+        updateUIForGuest();
+        
+        // Отписываемся от realtime
+        if (realtimeSubscription) {
+            realtimeSubscription.unsubscribe();
+        }
+    }
+
+    // Обновление интерфейса для авторизованного пользователя
+    async function updateUIForUser(profile) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        userInfo.style.display = 'flex';
+        guestMessage.style.display = 'none';
+        statusSelector.style.display = 'flex';
+        
+        // Обновляем информацию о пользователе
+        userAvatar.textContent = getInitials(profile.username);
+        userDisplayName.textContent = profile.username;
+        updateStatusBadge(userStatusBadge, profile.status);
+        
+        // Подсвечиваем активную кнопку статуса
+        updateActiveStatusButton(profile.status);
+        
+        // Загружаем список профилей
+        await loadProfiles();
+        
+        // Подписываемся на изменения в реальном времени
+        subscribeToProfiles();
+    }
+
+    function updateUIForGuest() {
+        loginBtn.style.display = 'none'; // Кнопка логина скрыта, т.к. у нас нет реального входа
+        logoutBtn.style.display = 'block'; // Оставляем кнопку выхода
+        userInfo.style.display = 'none';
+        statusSelector.style.display = 'none';
+        guestMessage.style.display = 'block';
+        
+        // Показываем профили даже для гостя (read-only)
+        loadProfiles();
+        subscribeToProfiles();
+    }
+
+    function updateStatusBadge(element, status) {
+        element.textContent = status === 'online' ? 'В сети' : 'Не в сети';
+        element.className = 'status-badge ' + (status === 'online' ? 'online' : 'offline');
+    }
+
+    function updateActiveStatusButton(status) {
+        setOnlineBtn.classList.remove('active');
+        setOfflineBtn.classList.remove('active');
+        if (status === 'online') {
+            setOnlineBtn.classList.add('active');
+        } else {
+            setOfflineBtn.classList.add('active');
+        }
+    }
+
+    // ============================================
+    // 6. Основные функции работы с данными
+    // ============================================
+    
+    // Загрузка всех профилей
+    async function loadProfiles() {
+        try {
+            profilesList.innerHTML = '<div class="empty-state">Загрузка...</div>';
+            
+            let query = supabase
+                .from('profiles')
+                .select('*')
+                .order('username');
+            
+            // Если фильтр "online", показываем только тех, у кого status = 'online'
+            if (currentFilter === 'online') {
+                query = query.eq('status', 'online');
+            }
+            
+            const { data: profiles, error } = await query;
+            
+            if (error) throw error;
+            
+            if (!profiles || profiles.length === 0) {
+                profilesList.innerHTML = '<div class="empty-state">Нет пользователей</div>';
+                return;
+            }
+            
+            // Обновляем заголовок
+            profilesTitle.textContent = currentFilter === 'online' ? 'Пользователи онлайн' : 'Все пользователи';
+            
+            // Отображаем список
+            let html = '';
+            profiles.forEach(profile => {
+                const isCurrentUser = currentUser && profile.id === currentUser.id;
+                html += `
+                    <div class="profile-item">
+                        <div class="profile-info">
+                            <div class="profile-avatar">${getInitials(profile.username)}</div>
+                            <div>
+                                <div class="profile-name">${profile.username} ${isCurrentUser ? '(вы)' : ''}</div>
+                                <span class="status-badge ${profile.status === 'online' ? 'online' : 'offline'}">
+                                    ${profile.status === 'online' ? 'В сети' : 'Не в сети'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            profilesList.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Ошибка загрузки профилей:', error);
+            profilesList.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+            showError('Ошибка загрузки профилей: ' + error.message);
+        }
+    }
+
+    // Обновление статуса текущего пользователя
+    async function updateStatus(newStatus) {
+        if (!currentUser) {
+            showError('Сначала войдите в систему');
+            return;
+        }
+        
+        try {
+            // Обновляем в базе данных
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: newStatus })
+                .eq('id', currentUser.id);
+            
+            if (error) throw error;
+            
+            // Обновляем локальные данные
+            currentUser.status = newStatus;
+            
+            // Обновляем UI
+            updateStatusBadge(userStatusBadge, newStatus);
+            updateActiveStatusButton(newStatus);
+            
+            showSuccess(`Статус изменен на ${newStatus === 'online' ? 'В сети' : 'Не в сети'}`);
+            
+        } catch (error) {
+            showError('Ошибка обновления статуса: ' + error.message);
+        }
+    }
+
+    // Подписка на изменения в реальном времени
+    function subscribeToProfiles() {
+        // Отписываемся от предыдущей подписки
+        if (realtimeSubscription) {
+            realtimeSubscription.unsubscribe();
+        }
+        
+        // Подписываемся на изменения в таблице profiles
+        realtimeSubscription = supabase
+            .channel('profiles-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'profiles' },
+                (payload) => {
+                    console.log('Изменение в БД:', payload);
+                    // Перезагружаем список профилей при любых изменениях
+                    loadProfiles();
+                    
+                    // Если изменился текущий пользователь, обновляем его данные
+                    if (currentUser && payload.new && payload.new.id === currentUser.id) {
+                        currentUser = { ...currentUser, ...payload.new };
+                        updateStatusBadge(userStatusBadge, currentUser.status);
+                        updateActiveStatusButton(currentUser.status);
+                    }
+                }
+            )
+            .subscribe();
+    }
+
+    // ============================================
+    // 7. Обработчики событий
+    // ============================================
+    
     // Переключение вкладок
-    window.switchTab = (tab) => {
+    window.switchTab = (filter) => {
         const tabs = document.querySelectorAll('.tab');
         tabs.forEach(t => t.classList.remove('active'));
         
-        if (tab === 'chats') {
+        currentFilter = filter;
+        
+        if (filter === 'all') {
             tabs[0].classList.add('active');
-            chatsSection.style.display = 'block';
-            usersSection.style.display = 'none';
-            chatSection.style.display = 'none';
-            loadChats();
         } else {
             tabs[1].classList.add('active');
-            chatsSection.style.display = 'none';
-            usersSection.style.display = 'block';
-            chatSection.style.display = 'none';
-            loadUsers();
         }
+        
+        loadProfiles();
     };
 
-    // Загрузка пользователей
-    const loadUsers = async () => {
-        if (!currentUser) return;
-        
-        try {
-            usersList.innerHTML = '<div class="empty-state">Загрузка...</div>';
-            
-            const usersQuery = query(collection(db, "users"));
-            const snapshot = await getDocs(usersQuery);
-            
-            console.log('Найдено пользователей:', snapshot.size);
-            showDebug(`Найдено пользователей: ${snapshot.size}`);
-            
-            if (snapshot.empty) {
-                usersList.innerHTML = '<div class="empty-state">Нет других пользователей</div>';
-                return;
-            }
-            
-            let html = '';
-            snapshot.forEach((doc) => {
-                if (doc.id !== currentUser.uid) {
-                    const userData = doc.data();
-                    html += `
-                        <div class="user-item" onclick="selectUser('${doc.id}', '${userData.displayName || 'Пользователь'}', '${userData.photoURL || ''}')">
-                            <img src="${userData.photoURL || 'https://via.placeholder.com/45'}" class="user-avatar-small">
-                            <div>
-                                <div class="user-name">${userData.displayName || 'Пользователь'}</div>
-                                <div class="user-email-small">${userData.email || 'Email не указан'}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            
-            usersList.innerHTML = html || '<div class="empty-state">Нет других пользователей</div>';
-            
-        } catch (error) {
-            console.error('Ошибка загрузки пользователей:', error);
-            usersList.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
-            showError('Ошибка загрузки пользователей: ' + error.message);
-        }
-    };
+    // Обновить список
+    refreshProfilesBtn.addEventListener('click', loadProfiles);
 
-    // Загрузка чатов
-    const loadChats = async () => {
-        if (!currentUser) return;
-        
-        try {
-            chatsList.innerHTML = '<div class="empty-state">Загрузка...</div>';
-            
-            const chatsQuery = query(
-                collection(db, "chats"),
-                where("participants", "array-contains", currentUser.uid)
-            );
-            
-            const snapshot = await getDocs(chatsQuery);
-            
-            if (snapshot.empty) {
-                chatsList.innerHTML = '<div class="empty-state">У вас пока нет чатов</div>';
-                return;
-            }
-            
-            let html = '';
-            
-            for (const chatDoc of snapshot.docs) {
-                const chatData = chatDoc.data();
-                const otherUserId = chatData.participants.find(id => id !== currentUser.uid);
-                
-                const userDoc = await getDoc(doc(db, "users", otherUserId));
-                const userData = userDoc.data();
-                
-                if (userData) {
-                    html += `
-                        <div class="chat-item" onclick="openChat('${otherUserId}', '${userData.displayName || 'Пользователь'}', '${userData.photoURL || ''}')">
-                            <img src="${userData.photoURL || 'https://via.placeholder.com/45'}" class="user-avatar-small">
-                            <div>
-                                <div class="user-name">${userData.displayName || 'Пользователь'}</div>
-                                <div class="user-email-small">${userData.email || ''}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            
-            chatsList.innerHTML = html || '<div class="empty-state">Нет чатов</div>';
-            
-        } catch (error) {
-            console.error('Ошибка загрузки чатов:', error);
-            chatsList.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
-        }
-    };
+    // Установка статуса "Онлайн"
+    setOnlineBtn.addEventListener('click', () => updateStatus('online'));
 
-    // Выбор пользователя
-    window.selectUser = (userId, userName, userPhoto) => {
-        openChat(userId, { displayName: userName, photoURL: userPhoto });
-    };
-
-    // Открыть чат
-    window.openChat = async (userId, userData) => {
-        selectedUserId = userId;
-        
-        chatHeader.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="${userData.photoURL || 'https://via.placeholder.com/40'}" style="width: 40px; height: 40px; border-radius: 50%;">
-                <h3 style="margin: 0;">${userData.displayName || 'Пользователь'}</h3>
-            </div>
-        `;
-        
-        const chatId = [currentUser.uid, userId].sort().join('_');
-        currentChatId = chatId;
-        
-        try {
-            const chatRef = doc(db, "chats", chatId);
-            const chatDoc = await getDoc(chatRef);
-            
-            if (!chatDoc.exists()) {
-                await setDoc(chatRef, {
-                    participants: [currentUser.uid, userId],
-                    createdAt: serverTimestamp()
-                });
-            }
-            
-            if (unsubscribeMessages) {
-                unsubscribeMessages();
-            }
-            
-            const messagesQuery = query(
-                collection(db, "chats", chatId, "messages"),
-                orderBy("timestamp", "asc")
-            );
-            
-            unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
-                messagesContainer.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    messagesContainer.innerHTML = '<div class="empty-state">Нет сообщений. Напишите первое сообщение!</div>';
-                    return;
-                }
-                
-                snapshot.forEach((doc) => {
-                    const msg = doc.data();
-                    const div = document.createElement('div');
-                    div.className = `message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}`;
-                    
-                    let timeStr = '';
-                    if (msg.timestamp?.toDate) {
-                        timeStr = msg.timestamp.toDate().toLocaleTimeString();
-                    }
-                    
-                    div.innerHTML = `
-                        <div>${msg.text || ''}</div>
-                        <div class="message-time">${timeStr}</div>
-                    `;
-                    messagesContainer.appendChild(div);
-                });
-                
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-            
-            chatsSection.style.display = 'none';
-            usersSection.style.display = 'none';
-            chatSection.style.display = 'block';
-            
-        } catch (error) {
-            console.error('Ошибка открытия чата:', error);
-            showError('Ошибка открытия чата: ' + error.message);
-        }
-    };
-
-    // Отправка сообщения
-    sendBtn.addEventListener('click', async () => {
-        if (!currentUser || !selectedUserId || !currentChatId) {
-            showError('Ошибка: выберите получателя');
-            return;
-        }
-
-        const text = messageInput.value.trim();
-        if (!text) {
-            showError('Введите сообщение');
-            return;
-        }
-
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Отправка...';
-
-        try {
-            await addDoc(collection(db, "chats", currentChatId, "messages"), {
-                text: text,
-                senderId: currentUser.uid,
-                receiverId: selectedUserId,
-                timestamp: serverTimestamp()
-            });
-
-            messageInput.value = '';
-            showSuccess('Сообщение отправлено');
-           
-        } catch (e) {
-            console.error('Ошибка отправки:', e);
-            showError('Ошибка при отправке: ' + e.message);
-        } finally {
-            sendBtn.disabled = false;
-            sendBtn.textContent = '📤 Отправить';
-        }
-    });
-
-    // Кнопка назад
-    backBtn.addEventListener('click', () => {
-        if (unsubscribeMessages) {
-            unsubscribeMessages();
-        }
-        chatSection.style.display = 'none';
-        chatsSection.style.display = 'block';
-        document.querySelector('.tab').classList.add('active');
-        document.querySelectorAll('.tab')[1].classList.remove('active');
-    });
-
-    // Обновить список пользователей
-    refreshUsersBtn.addEventListener('click', loadUsers);
-
-    // Сохранение пользователя
-    const saveUser = async (user) => {
-        try {
-            const userRef = doc(db, "users", user.uid);
-            const userData = {
-                email: user.email,
-                displayName: user.displayName || 'Пользователь',
-                photoURL: user.photoURL || 'https://via.placeholder.com/40',
-                lastSeen: serverTimestamp(),
-                uid: user.uid
-            };
-            
-            await setDoc(userRef, userData, { merge: true });
-            console.log('Пользователь сохранен:', userData);
-            showDebug('Пользователь сохранен в БД');
-            
-            // Проверяем сохранение
-            const savedUser = await getDoc(userRef);
-            if (savedUser.exists()) {
-                console.log('Пользователь найден в БД');
-            }
-            
-        } catch (error) {
-            console.error('Ошибка сохранения пользователя:', error);
-            showError('Ошибка сохранения пользователя: ' + error.message);
-        }
-    };
-
-    // Отслеживание входа
-    onAuthStateChanged(auth, async (user) => {
-        console.log('Auth state changed:', user ? 'Пользователь вошел' : 'Пользователь вышел');
-        showDebug(`Статус: ${user ? 'Вошел' : 'Вышел'}`);
-        
-        if (user) {
-            currentUser = user;
-            loginBtn.style.display = 'none';
-            logoutBtn.style.display = 'block';
-            userInfo.style.display = 'flex';
-            userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-            userEmail.textContent = user.email;
-            mainContent.style.display = 'block';
-            guestMessage.style.display = 'none';
-            
-            await saveUser(user);
-            loadChats();
-            showSuccess(`Добро пожаловать, ${user.displayName || user.email}!`);
-            
-        } else {
-            currentUser = null;
-            loginBtn.style.display = 'block';
-            logoutBtn.style.display = 'none';
-            userInfo.style.display = 'none';
-            mainContent.style.display = 'none';
-            guestMessage.style.display = 'block';
-            
-            if (unsubscribeMessages) {
-                unsubscribeMessages();
-            }
-        }
-    });
-
-    // Обработка входа с улучшенной ошибкой
-    loginBtn.addEventListener('click', async () => {
-        try {
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Вход...';
-            
-            console.log('Попытка входа через Google...');
-            const result = await signInWithPopup(auth, provider);
-            
-            console.log('Вход успешен:', result.user.email);
-            showSuccess(`Успешный вход: ${result.user.email}`);
-            
-        } catch (error) {
-            console.error('Ошибка входа:', error);
-            
-            let errorMessage = 'Ошибка входа: ';
-            switch (error.code) {
-                case 'auth/popup-closed-by-user':
-                    errorMessage += 'Окно входа было закрыто';
-                    break;
-                case 'auth/cancelled-popup-request':
-                    errorMessage += 'Запрос отменен';
-                    break;
-                case 'auth/popup-blocked':
-                    errorMessage += 'Всплывающее окно заблокировано браузером';
-                    break;
-                default:
-                    errorMessage += error.message;
-            }
-            
-            showError(errorMessage);
-            
-        } finally {
-            loginBtn.disabled = false;
-            loginBtn.textContent = '🔐 Войти через Google';
-        }
-    });
+    // Установка статуса "Не в сети"
+    setOfflineBtn.addEventListener('click', () => updateStatus('offline'));
 
     // Выход
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            showSuccess('Вы вышли из аккаунта');
-        } catch (error) {
-            showError('Ошибка выхода: ' + error.message);
-        }
+    logoutBtn.addEventListener('click', logout);
+
+    // Кнопка входа - показываем тестовых пользователей
+    // В реальном проекте здесь была бы интеграция с Google Auth,
+    // но для учебных целей мы просто даем выбрать тестового пользователя
+    loginBtn.addEventListener('click', async () => {
+        // Для простоты, входим как первый тестовый пользователь
+        // В реальном проекте здесь был бы красивый выбор пользователя
+        await loginAsTestUser(TEST_USERS[0].id);
     });
 
+    // ============================================
+    // 8. Инициализация при загрузке страницы
+    // ============================================
+    async function init() {
+        // Проверяем, был ли ранее сохраненный пользователь
+        const savedUserId = localStorage.getItem('currentUserId');
+        
+        if (savedUserId) {
+            // Пробуем загрузить сохраненного пользователя
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', savedUserId)
+                    .single();
+                
+                if (!error && profile) {
+                    currentUser = profile;
+                    await updateUIForUser(profile);
+                } else {
+                    // Если пользователь не найден, показываем гостевой режим
+                    updateUIForGuest();
+                }
+            } catch (error) {
+                updateUIForGuest();
+            }
+        } else {
+            // Гостевой режим
+            updateUIForGuest();
+        }
+    }
+
+    // Запускаем инициализацию
+    init();
+
+    // Добавляем небольшую демонстрацию для входа (так как нет реальной кнопки логина)
+    // Показываем инструкцию в debug
+    showDebug(`
+        👋 Инструкция:
+        1. Открой Supabase, добавь в таблицу profiles несколько записей с разными статусами.
+        2. Скопируй ID одного из пользователей.
+        3. В консоли браузера выполни: 
+           await loginAsTestUser('скопированный-id')
+           
+        Или просто перезагрузи страницу - будет гостевым режим (только чтение).
+    `);
+    
+    // Делаем функцию логина доступной из консоли для демонстрации
+    window.loginAsTestUser = loginAsTestUser;
+    
 </script>
 </body>
 </html>
