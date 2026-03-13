@@ -357,16 +357,35 @@
     }
 
     // Выход
-    function logout() {
-        localStorage.removeItem('currentUserId');
-        currentUser = null;
-        updateUIForGuest();
-        
-        // Отписываемся от realtime
-        if (realtimeSubscription) {
-            realtimeSubscription.unsubscribe();
-        }
+  // Выход
+function logout() {
+    // Очищаем localStorage
+    localStorage.removeItem('currentUserId');
+    
+    // Сбрасываем текущего пользователя
+    currentUser = null;
+    
+    // Отписываемся от realtime обновлений
+    if (realtimeSubscription) {
+        realtimeSubscription.unsubscribe();
+        realtimeSubscription = null;
     }
+    
+    // Прячем панель пользователя и селектор статуса
+    userInfo.style.display = 'none';
+    statusSelector.style.display = 'none';
+    
+    // Показываем сообщение для гостя
+    guestMessage.style.display = 'block';
+    
+    // Перезагружаем список профилей в гостевом режиме
+    loadProfiles();
+    
+    // Показываем сообщение об успешном выходе
+    showSuccess('Вы вышли из системы');
+    
+    console.log('Выход выполнен');
+}
 
     // Обновление интерфейса для авторизованного пользователя
     async function updateUIForUser(profile) {
