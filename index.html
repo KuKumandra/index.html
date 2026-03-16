@@ -2,12 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов Supabase</title>
+    <title>Монитор статусов</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
-            margin: 0 auto;
+            margin: 20px auto;
             padding: 20px;
             background: #f0f2f5;
         }
@@ -17,30 +17,30 @@
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #1e293b;
-            margin-top: 0;
-            text-align: center;
-        }
         button {
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             margin: 5px;
-            transition: 0.2s;
+            width: 100%;
         }
-        button:hover {
-            opacity: 0.9;
+        button.google {
+            background: #db4437;
+        }
+        button.online {
+            background: #4ade80;
+            color: black;
+        }
+        button.offline {
+            background: #cbd5e1;
+            color: black;
         }
         button.logout {
             background: #ef4444;
-        }
-        button.logout:hover {
-            background: #dc2626;
         }
         .user-card {
             background: #f8fafc;
@@ -50,7 +50,6 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            border: 1px solid #e2e8f0;
         }
         .avatar {
             width: 50px;
@@ -62,412 +61,228 @@
             align-items: center;
             justify-content: center;
             font-size: 20px;
+        }
+        .online {
+            color: #166534;
             font-weight: bold;
         }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        .status-online {
-            background: #4ade80;
-            color: #166534;
-        }
-        .status-offline {
-            background: #cbd5e1;
+        .offline {
             color: #475569;
-        }
-        .status-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .status-buttons button {
-            flex: 1;
-        }
-        .btn-online {
-            background: #4ade80;
-            color: #166534;
-        }
-        .btn-offline {
-            background: #cbd5e1;
-            color: #475569;
-        }
-        .profiles-list {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            margin-top: 20px;
-            max-height: 400px;
-            overflow-y: auto;
         }
         .profile-item {
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
         .profile-item:last-child {
             border-bottom: none;
         }
-        .profile-avatar {
-            width: 40px;
-            height: 40px;
-            background: #94a3b8;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .profile-info {
-            flex: 1;
-        }
-        .profile-name {
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        .current-user {
-            background: #dbeafe;
-            border-left: 4px solid #3b82f6;
-        }
-        .login-section {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .login-input {
-            padding: 10px;
-            width: 300px;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            margin-right: 10px;
-            font-size: 14px;
-        }
-        .error {
-            color: #dc2626;
-            background: #fee2e2;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .success {
-            color: #059669;
-            background: #d1fae5;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .info {
-            color: #3b82f6;
-            background: #dbeafe;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 14px;
-        }
         .hidden {
             display: none;
         }
-        .filter-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 12px;
         }
-        .filter-buttons button {
-            flex: 1;
+        .status-badge.online {
+            background: #4ade80;
+        }
+        .status-badge.offline {
+            background: #cbd5e1;
+        }
+        .filter-btn {
             background: #e2e8f0;
-            color: #475569;
+            color: black;
+            width: 48%;
+            display: inline-block;
         }
-        .filter-buttons button.active {
+        .filter-btn.active {
             background: #3b82f6;
             color: white;
         }
     </style>
-    <!-- Подключаем Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
         <h1>👥 Монитор статусов</h1>
         
-        <!-- Сообщения -->
-        <div id="messageContainer"></div>
-        
-        <!-- Информация о текущем пользователе -->
         <div id="userInfo" class="user-card hidden">
             <div class="avatar" id="userAvatar"></div>
             <div>
-                <div style="font-weight: bold; margin-bottom: 5px;" id="userName"></div>
-                <span id="userStatus" class="status-badge"></span>
+                <div id="userName" style="font-weight: bold;"></div>
+                <div id="userStatus"></div>
             </div>
         </div>
-        
-        <!-- Кнопки управления статусом (видны только когда пользователь вошел) -->
-        <div id="statusControls" class="status-buttons hidden">
-            <button id="setOnline" class="btn-online">🟢 В сети</button>
-            <button id="setOffline" class="btn-offline">⚫ Не в сети</button>
+
+        <div id="loginSection">
+            <button id="googleBtn" class="google">🔐 Войти через Google</button>
+        </div>
+
+        <div id="statusControls" class="hidden">
+            <button id="onlineBtn" class="online">🟢 В сети</button>
+            <button id="offlineBtn" class="offline">⚫ Не в сети</button>
             <button id="logoutBtn" class="logout">🚪 Выйти</button>
         </div>
-        
-        <!-- Секция входа -->
-        <div id="loginSection" class="login-section">
-            <h3>🔐 Вход в систему</h3>
-            <p>Твой ID: <strong>8e68144a-68de-4bff-ae47-762dce744422</strong></p>
-            <input type="text" id="userIdInput" class="login-input" placeholder="Введи ID пользователя" value="8e68144a-68de-4bff-ae47-762dce744422">
-            <button id="loginBtn">Войти</button>
-            <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
-                ID других пользователей можно найти в таблице profiles
-            </p>
+
+        <div style="margin: 15px 0; text-align: center;">
+            <button id="filterAll" class="filter-btn active">📋 Все</button>
+            <button id="filterOnline" class="filter-btn">🟢 Онлайн</button>
         </div>
-        
-        <!-- Фильтры -->
-        <div class="filter-buttons">
-            <button id="filterAll" class="active">📋 Все</button>
-            <button id="filterOnline">🟢 Онлайн</button>
-        </div>
-        
-        <!-- Список профилей -->
-        <h3>Список пользователей:</h3>
-        <div id="profilesList" class="profiles-list">
-            <div style="text-align: center; padding: 20px;">Загрузка...</div>
-        </div>
+
+        <div id="profilesList"></div>
     </div>
 
     <script>
-        // ============================================
-        // ТВОИ ДАННЫЕ - используем другие имена переменных
-        // ============================================
-        const MY_SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
-        const MY_SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
-        const MY_USER_ID = '8e68144a-68de-4bff-ae47-762dce744422';
+        // ТВОИ ДАННЫЕ
+        const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
         
-        // Создаем клиент Supabase - используем другое имя
-        const supabaseClient = window.supabase.createClient(MY_SUPABASE_URL, MY_SUPABASE_KEY);
-        
-        // ============================================
-        // Глобальные переменные
-        // ============================================
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let currentUser = null;
-        let currentFilter = 'all';
-        
-        // ============================================
-        // Элементы DOM
-        // ============================================
-        const messageContainer = document.getElementById('messageContainer');
-        const userInfo = document.getElementById('userInfo');
-        const userAvatar = document.getElementById('userAvatar');
-        const userName = document.getElementById('userName');
-        const userStatus = document.getElementById('userStatus');
-        const statusControls = document.getElementById('statusControls');
-        const loginSection = document.getElementById('loginSection');
-        const profilesList = document.getElementById('profilesList');
-        const userIdInput = document.getElementById('userIdInput');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const setOnline = document.getElementById('setOnline');
-        const setOffline = document.getElementById('setOffline');
-        const filterAll = document.getElementById('filterAll');
-        const filterOnline = document.getElementById('filterOnline');
-        
-        // ============================================
-        // Функции для сообщений
-        // ============================================
-        function showMessage(text, type) {
-            messageContainer.innerHTML = `<div class="${type}">${text}</div>`;
-            setTimeout(() => {
-                messageContainer.innerHTML = '';
-            }, 3000);
+        let filter = 'all';
+
+        // Функции для UI
+        function showUserInfo(user) {
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('statusControls').classList.remove('hidden');
+            
+            document.getElementById('userAvatar').textContent = user.username?.substring(0, 2) || '👤';
+            document.getElementById('userName').textContent = user.username || 'Пользователь';
+            document.getElementById('userStatus').innerHTML = 
+                `<span class="status-badge ${user.status || 'offline'}">${user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети'}</span>`;
         }
-        
-        // ============================================
-        // Функции для работы с профилями
-        // ============================================
-        async function loadProfiles() {
+
+        function hideUserInfo() {
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('statusControls').classList.add('hidden');
+        }
+
+        // Загрузка списка пользователей
+        async function loadUsers() {
             try {
-                let query = supabaseClient.from('profiles').select('*');
-                
-                if (currentFilter === 'online') {
+                let query = supabase.from('profiles').select('*');
+                if (filter === 'online') {
                     query = query.eq('status', 'online');
                 }
                 
-                const { data: profiles, error } = await query;
-                
+                const { data: users, error } = await query;
                 if (error) throw error;
-                
-                if (!profiles || profiles.length === 0) {
-                    profilesList.innerHTML = '<div style="text-align: center; padding: 20px;">Нет пользователей</div>';
-                    return;
-                }
-                
-                let html = '';
-                profiles.forEach(profile => {
-                    const isCurrentUser = currentUser && profile.id === currentUser.id;
-                    const statusClass = profile.status === 'online' ? 'status-online' : 'status-offline';
-                    const statusText = profile.status === 'online' ? '🟢 В сети' : '⚫ Не в сети';
-                    
+
+                let html = '<h3>Пользователи:</h3>';
+                users?.forEach(user => {
+                    const isMe = currentUser && user.id === currentUser.id;
                     html += `
-                        <div class="profile-item ${isCurrentUser ? 'current-user' : ''}">
-                            <div class="profile-avatar">${profile.username.substring(0, 2).toUpperCase()}</div>
-                            <div class="profile-info">
-                                <div class="profile-name">
-                                    ${profile.username} ${isCurrentUser ? '(это вы)' : ''}
-                                </div>
-                                <span class="status-badge ${statusClass}">${statusText}</span>
+                        <div class="profile-item" style="${isMe ? 'background: #dbeafe' : ''}">
+                            <div class="avatar" style="width: 35px; height: 35px; font-size: 14px;">${user.username?.substring(0, 2) || '👤'}</div>
+                            <div style="flex: 1">
+                                <strong>${user.username} ${isMe ? '(вы)' : ''}</strong><br>
+                                <span class="status-badge ${user.status || 'offline'}">${user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети'}</span>
                             </div>
                         </div>
                     `;
                 });
                 
-                profilesList.innerHTML = html;
-                
+                document.getElementById('profilesList').innerHTML = html || 'Нет пользователей';
             } catch (error) {
-                console.error('Ошибка:', error);
-                profilesList.innerHTML = '<div style="text-align: center; padding: 20px; color: red;">Ошибка загрузки</div>';
+                console.error('Ошибка загрузки:', error);
             }
         }
-        
+
         // Обновление статуса
-        async function updateStatus(newStatus) {
-            if (!currentUser) {
-                showMessage('Сначала войдите в систему', 'error');
-                return;
-            }
+        async function updateStatus(status) {
+            if (!currentUser) return;
             
-            try {
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .update({ status: newStatus })
-                    .eq('id', currentUser.id);
-                
-                if (error) throw error;
-                
-                // Обновляем локальные данные
-                currentUser.status = newStatus;
-                updateUserInfo(currentUser);
-                showMessage(`Статус изменен на ${newStatus === 'online' ? 'В сети' : 'Не в сети'}`, 'success');
-                
-            } catch (error) {
-                showMessage('Ошибка обновления статуса', 'error');
-            }
+            await supabase
+                .from('profiles')
+                .update({ status: status })
+                .eq('id', currentUser.id);
+            
+            currentUser.status = status;
+            showUserInfo(currentUser);
+            loadUsers();
         }
+
+        // Вход через Google
+        document.getElementById('googleBtn').onclick = async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        };
+
+        // Выход
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabase.auth.signOut();
+            currentUser = null;
+            hideUserInfo();
+            loadUsers();
+        };
+
+        // Кнопки статуса
+        document.getElementById('onlineBtn').onclick = () => updateStatus('online');
+        document.getElementById('offlineBtn').onclick = () => updateStatus('offline');
+
+        // Фильтры
+        document.getElementById('filterAll').onclick = () => {
+            filter = 'all';
+            document.getElementById('filterAll').classList.add('active');
+            document.getElementById('filterOnline').classList.remove('active');
+            loadUsers();
+        };
         
-        // Обновление информации о пользователе в UI
-        function updateUserInfo(user) {
-            if (user) {
-                userInfo.classList.remove('hidden');
-                userAvatar.textContent = user.username.substring(0, 2).toUpperCase();
-                userName.textContent = user.username;
-                userStatus.textContent = user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети';
-                userStatus.className = `status-badge ${user.status === 'online' ? 'status-online' : 'status-offline'}`;
-                statusControls.classList.remove('hidden');
-                loginSection.classList.add('hidden');
-            } else {
-                userInfo.classList.add('hidden');
-                statusControls.classList.add('hidden');
-                loginSection.classList.remove('hidden');
-            }
-        }
-        
-        // Вход по ID
-        async function login(userId) {
-            try {
-                const { data: profile, error } = await supabaseClient
+        document.getElementById('filterOnline').onclick = () => {
+            filter = 'online';
+            document.getElementById('filterOnline').classList.add('active');
+            document.getElementById('filterAll').classList.remove('active');
+            loadUsers();
+        };
+
+        // Следим за входом
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Проверяем, есть ли пользователь в БД
+                const { data: existing } = await supabase
                     .from('profiles')
                     .select('*')
-                    .eq('id', userId)
+                    .eq('id', session.user.id)
                     .single();
-                
-                if (error || !profile) {
-                    showMessage('Пользователь не найден', 'error');
-                    return;
+
+                if (!existing) {
+                    // Создаем нового
+                    const newUser = {
+                        id: session.user.id,
+                        username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+                        status: 'online'
+                    };
+                    await supabase.from('profiles').insert([newUser]);
+                    currentUser = newUser;
+                } else {
+                    currentUser = existing;
                 }
                 
-                currentUser = profile;
-                updateUserInfo(profile);
-                showMessage(`Добро пожаловать, ${profile.username}!`, 'success');
-                loadProfiles();
-                
-            } catch (error) {
-                showMessage('Ошибка входа', 'error');
-            }
-        }
-        
-        // Выход
-        function logout() {
-            currentUser = null;
-            updateUserInfo(null);
-            showMessage('Вы вышли из системы', 'info');
-            loadProfiles();
-        }
-        
-        // ============================================
-        // Подписка на изменения в реальном времени
-        // ============================================
-        function subscribeToChanges() {
-            supabaseClient
-                .channel('profiles_changes')
-                .on('postgres_changes', 
-                    { event: '*', schema: 'public', table: 'profiles' },
-                    () => {
-                        loadProfiles();
-                    }
-                )
-                .subscribe();
-        }
-        
-        // ============================================
-        // Обработчики событий
-        // ============================================
-        loginBtn.addEventListener('click', () => {
-            const userId = userIdInput.value.trim();
-            if (userId) {
-                login(userId);
-            } else {
-                showMessage('Введите ID пользователя', 'error');
+                showUserInfo(currentUser);
+                loadUsers();
             }
         });
-        
-        logoutBtn.addEventListener('click', logout);
-        
-        setOnline.addEventListener('click', () => updateStatus('online'));
-        setOffline.addEventListener('click', () => updateStatus('offline'));
-        
-        filterAll.addEventListener('click', () => {
-            filterAll.classList.add('active');
-            filterOnline.classList.remove('active');
-            currentFilter = 'all';
-            loadProfiles();
-        });
-        
-        filterOnline.addEventListener('click', () => {
-            filterOnline.classList.add('active');
-            filterAll.classList.remove('active');
-            currentFilter = 'online';
-            loadProfiles();
-        });
-        
-        // ============================================
-        // Инициализация
-        // ============================================
-        async function init() {
-            // Показываем сообщение с инструкцией
-            showMessage('Можно войти с ID: ' + MY_USER_ID, 'info');
-            
-            // Загружаем список профилей
-            await loadProfiles();
-            
-            // Подписываемся на изменения
-            subscribeToChanges();
-        }
-        
-        // Запускаем
-        init();
+
+        // Загружаем список при старте
+        loadUsers();
+
+        // Подписка на изменения
+        supabase
+            .channel('profiles')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'profiles' }, 
+                () => loadUsers()
+            )
+            .subscribe();
     </script>
 </body>
 </html>
