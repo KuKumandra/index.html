@@ -2,979 +2,220 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов - Рейтинг и достижения</title>
+    <title>Монитор статусов</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
             padding: 20px;
+            background: #f0f2f5;
         }
-        
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        /* Карточки */
-        .card {
             background: white;
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .card:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Заголовки */
-        h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        
-        h3 {
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #555;
-        }
-        
-        /* Кнопки */
-        .btn {
-            padding: 12px 24px;
+        button {
+            background: #3b82f6;
+            color: white;
             border: none;
-            border-radius: 12px;
+            padding: 12px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .btn-google {
-            background: #4285f4;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        /* Профиль пользователя */
-        .profile-card {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: bold;
-            color: white;
-        }
-        
-        .user-stats {
-            flex: 1;
-        }
-        
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        /* Сетка достижений */
-        .achievements-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .achievement-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.2s;
-            position: relative;
-        }
-        
-        .achievement-card.earned {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 2px solid #f59e0b;
-        }
-        
-        .achievement-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-        
-        .achievement-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .achievement-desc {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .achievement-locked {
-            opacity: 0.5;
-            filter: grayscale(0.5);
-        }
-        
-        /* Рейтинг */
-        .ranking-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .ranking-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            transition: all 0.2s;
-        }
-        
-        .ranking-item:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
-        }
-        
-        .rank-number {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .rank-number.top-1 {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            font-size: 24px;
-        }
-        
-        .rank-number.top-2 {
-            background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-        }
-        
-        .rank-number.top-3 {
-            background: linear-gradient(135deg, #cd9b6e 0%, #b45309 100%);
-        }
-        
-        .rank-info {
-            flex: 1;
-        }
-        
-        .rank-name {
-            font-weight: bold;
-        }
-        
-        .rank-points {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .rank-achievements {
-            font-size: 12px;
-            color: #f59e0b;
-        }
-        
-        /* Вкладки */
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border: none;
-            background: none;
             font-size: 16px;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.2s;
+            margin: 5px;
+            width: 100%;
         }
-        
-        .tab.active {
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
+        button.google {
+            background: #db4437;
         }
-        
-        /* Сообщения */
-        .message {
-            padding: 12px;
+        button.logout {
+            background: #ef4444;
+        }
+        .user-card {
+            background: #f8fafc;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
-        
-        .message.success {
-            background: #d1fae5;
-            color: #065f46;
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
-        
-        .message.error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
         .hidden {
             display: none;
         }
-        
-        /* Чат */
-        .chat-container {
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
         }
-        
-        .chat-message {
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .chat-message strong {
-            color: #667eea;
-        }
-        
-        .chat-input {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .chat-input input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        
-        /* Общие */
-        .flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .mb-3 {
-            margin-bottom: 15px;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        .new-achievement {
-            animation: pulse 0.5s ease-in-out;
-        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
-        <div class="card">
-            <div class="flex">
-                <div>
-                    <h1>🏆 Монитор статусов</h1>
-                    <p style="color: #666;">Система рейтинга и достижений</p>
-                </div>
-                <div id="authButtons">
-                    <button id="googleLoginBtn" class="btn btn-google">🔐 Войти через Google</button>
-                    <button id="logoutBtn" class="btn btn-danger hidden">🚪 Выйти</button>
-                </div>
+        <h1>👥 Монитор статусов</h1>
+        
+        <div id="message"></div>
+        
+        <div id="userInfo" class="user-card hidden">
+            <div class="avatar" id="userAvatar"></div>
+            <div>
+                <div id="userName" style="font-weight: bold;"></div>
+                <div id="userStatus"></div>
             </div>
         </div>
-        
-        <!-- Сообщения -->
-        <div id="messageContainer"></div>
-        
-        <!-- Основной контент (скрыт до входа) -->
-        <div id="mainContent" class="hidden">
-            <!-- Профиль пользователя -->
-            <div class="card">
-                <div class="profile-card">
-                    <div class="avatar" id="userAvatar">👤</div>
-                    <div class="user-stats">
-                        <h2 id="userName"></h2>
-                        <div class="stat-grid" id="userStats">
-                            <!-- Статистика будет загружена динамически -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Вкладки -->
-            <div class="card">
-                <div class="tabs">
-                    <button class="tab active" data-tab="achievements">🏅 Мои достижения</button>
-                    <button class="tab" data-tab="ranking">📊 Рейтинг студентов</button>
-                    <button class="tab" data-tab="chat">💬 Общий чат</button>
-                </div>
-                
-                <!-- Достижения -->
-                <div id="achievementsTab">
-                    <h3>🏅 Полученные значки</h3>
-                    <div id="earnedAchievements" class="achievements-grid">
-                        <div style="text-align: center; grid-column: span 2;">Загрузка...</div>
-                    </div>
-                    <h3 style="margin-top: 30px;">🔒 Недоступные достижения</h3>
-                    <div id="lockedAchievements" class="achievements-grid">
-                        <div style="text-align: center; grid-column: span 2;">Загрузка...</div>
-                    </div>
-                </div>
-                
-                <!-- Рейтинг -->
-                <div id="rankingTab" class="hidden">
-                    <div class="flex mb-3">
-                        <h3>🏆 Топ студентов</h3>
-                        <span style="color: #666;">По количеству достижений</span>
-                    </div>
-                    <div id="rankingList" class="ranking-list">
-                        <div style="text-align: center;">Загрузка...</div>
-                    </div>
-                </div>
-                
-                <!-- Общий чат -->
-                <div id="chatTab" class="hidden">
-                    <div id="chatMessages" class="chat-container">
-                        <div style="text-align: center;">Загрузка сообщений...</div>
-                    </div>
-                    <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="Напиши сообщение в общий чат...">
-                        <button id="sendChatBtn" class="btn btn-primary">Отправить</button>
-                    </div>
-                </div>
-            </div>
+
+        <div id="loginSection">
+            <button id="googleBtn" class="google">🔐 Войти через Google</button>
         </div>
-        
-        <!-- Сообщение для гостя -->
-        <div id="guestMessage" class="card">
-            <div style="text-align: center; padding: 40px;">
-                <h3>👋 Добро пожаловать!</h3>
-                <p style="margin: 15px 0;">Войдите через Google, чтобы участвовать в рейтинге и получать достижения</p>
-                <button id="guestLoginBtn" class="btn btn-google">🔐 Войти через Google</button>
-            </div>
+
+        <div id="statusControls" class="hidden">
+            <button id="onlineBtn">🟢 В сети</button>
+            <button id="offlineBtn">⚫ Не в сети</button>
+            <button id="logoutBtn" class="logout">🚪 Выйти</button>
         </div>
+
+        <div id="profilesList">Загрузка...</div>
     </div>
 
     <script>
-        // ============================================
         // КОНФИГУРАЦИЯ
-        // ============================================
         const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
         
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // ============================================
-        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-        // ============================================
         let currentUser = null;
-        let currentTab = 'achievements';
-        let chatSubscription = null;
         
-        // ============================================
-        // ЭЛЕМЕНТЫ DOM
-        // ============================================
-        const messageContainer = document.getElementById('messageContainer');
-        const mainContent = document.getElementById('mainContent');
-        const guestMessage = document.getElementById('guestMessage');
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        const guestLoginBtn = document.getElementById('guestLoginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userAvatar = document.getElementById('userAvatar');
-        const userName = document.getElementById('userName');
-        const userStats = document.getElementById('userStats');
-        
-        // ============================================
-        // ФУНКЦИИ ДЛЯ СООБЩЕНИЙ
-        // ============================================
         function showMessage(text, type = 'success') {
-            messageContainer.innerHTML = `<div class="message ${type}">${text}</div>`;
-            setTimeout(() => {
-                messageContainer.innerHTML = '';
-            }, 3000);
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => msgDiv.innerHTML = '', 3000);
         }
         
-        // ============================================
-        // ОТСЛЕЖИВАНИЕ АКТИВНОСТИ (для достижений)
-        // ============================================
-        async function logActivity(activityType, data = {}) {
-            if (!currentUser) return;
-            
-            try {
-                await supabaseClient
-                    .from('activity_log')
-                    .insert([{
-                        user_id: currentUser.id,
-                        activity_type: activityType,
-                        activity_data: data
-                    }]);
-                
-                // Проверяем достижения после каждой активности
-                await checkAndAwardAchievements();
-            } catch (error) {
-                console.error('Ошибка логирования:', error);
+        function updateUI(user) {
+            if (user) {
+                document.getElementById('userInfo').classList.remove('hidden');
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('statusControls').classList.remove('hidden');
+                document.getElementById('userAvatar').textContent = (user.username || 'U').substring(0,2).toUpperCase();
+                document.getElementById('userName').textContent = user.username || 'Пользователь';
+                document.getElementById('userStatus').innerHTML = user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети';
+            } else {
+                document.getElementById('userInfo').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('statusControls').classList.add('hidden');
             }
         }
         
-        // ============================================
-        // ПРОВЕРКА И ВЫДАЧА ДОСТИЖЕНИЙ
-        // ============================================
-        async function checkAndAwardAchievements() {
-            if (!currentUser) return;
-            
+        async function loadUsers() {
             try {
-                // Получаем все достижения
-                const { data: achievements, error: achError } = await supabaseClient
-                    .from('achievements')
-                    .select('*');
-                
-                if (achError) throw achError;
-                
-                // Получаем уже полученные достижения пользователя
-                const { data: userAchs, error: userAchError } = await supabaseClient
-                    .from('user_achievements')
-                    .select('achievement_id')
-                    .eq('user_id', currentUser.id);
-                
-                if (userAchError) throw userAchError;
-                
-                const earnedIds = new Set(userAchs?.map(a => a.achievement_id) || []);
-                
-                // Получаем статистику пользователя
-                const { data: stats, error: statsError } = await supabaseClient
-                    .from('user_stats')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
-                
-                // Получаем активность пользователя
-                const { data: activities, error: actError } = await supabaseClient
-                    .from('activity_log')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-                
-                // Проверяем каждое достижение
-                for (const achievement of achievements) {
-                    if (earnedIds.has(achievement.id)) continue;
-                    
-                    let shouldAward = false;
-                    
-                    switch (achievement.condition_type) {
-                        case 'first_login':
-                            // Первый вход - проверяем есть ли другие активности
-                            const hasOtherActivities = activities && activities.length > 1;
-                            shouldAward = !hasOtherActivities && activities?.length === 1;
-                            break;
-                            
-                        case 'early_bird':
-                            // Ранняя пташка - вход до 8:00
-                            const hour = new Date().getHours();
-                            shouldAward = hour < 8;
-                            break;
-                            
-                        case 'marathon':
-                            // Марафонец - более 2 часов за раз
-                            shouldAward = stats && stats.total_minutes_studied >= 120;
-                            break;
-                            
-                        case 'activist':
-                            // Активист - 20 сообщений
-                            shouldAward = stats && stats.total_messages >= 20;
-                            break;
-                            
-                        case 'messages':
-                            // Мастер общения - 100 сообщений
-                            shouldAward = stats && stats.total_messages >= 100;
-                            break;
-                    }
-                    
-                    if (shouldAward) {
-                        await awardAchievement(achievement.id);
-                        showMessage(`🎉 Новое достижение: ${achievement.name}! ${achievement.description}`, 'success');
-                    }
-                }
-                
-                // Обновляем отображение
-                await loadUserAchievements();
-                await loadRanking();
-                await loadUserStats();
-                
-            } catch (error) {
-                console.error('Ошибка проверки достижений:', error);
-            }
-        }
-        
-        // ============================================
-        // ВЫДАЧА ДОСТИЖЕНИЯ
-        // ============================================
-        async function awardAchievement(achievementId) {
-            if (!currentUser) return;
-            
-            try {
-                await supabaseClient
-                    .from('user_achievements')
-                    .insert([{
-                        user_id: currentUser.id,
-                        achievement_id: achievementId
-                    }]);
-                
-                // Обновляем рейтинг пользователя
-                await updateUserRank();
-                
-            } catch (error) {
-                console.error('Ошибка выдачи достижения:', error);
-            }
-        }
-        
-        // ============================================
-        // ОБНОВЛЕНИЕ РЕЙТИНГА ПОЛЬЗОВАТЕЛЯ
-        // ============================================
-        async function updateUserRank() {
-            // Получаем количество достижений пользователя
-            const { count, error } = await supabaseClient
-                .from('user_achievements')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', currentUser.id);
-            
-            if (error) return;
-            
-            // Обновляем или создаем запись в user_stats (здесь можно добавить рейтинг)
-            await supabaseClient
-                .from('user_stats')
-                .upsert({
-                    user_id: currentUser.id,
-                    total_achievements: count
-                });
-        }
-        
-        // ============================================
-        // ЗАГРУЗКА ДОСТИЖЕНИЙ ПОЛЬЗОВАТЕЛЯ
-        // ============================================
-        async function loadUserAchievements() {
-            try {
-                // Получаем все достижения
-                const { data: allAchievements, error: achError } = await supabaseClient
-                    .from('achievements')
-                    .select('*');
-                
-                if (achError) throw achError;
-                
-                // Получаем полученные достижения пользователя
-                const { data: userAchievements, error: userError } = await supabaseClient
-                    .from('user_achievements')
-                    .select('achievement_id, earned_at')
-                    .eq('user_id', currentUser.id);
-                
-                if (userError) throw userError;
-                
-                const earnedIds = new Set(userAchievements?.map(a => a.achievement_id) || []);
-                
-                const earned = [];
-                const locked = [];
-                
-                allAchievements?.forEach(ach => {
-                    if (earnedIds.has(ach.id)) {
-                        earned.push(ach);
-                    } else {
-                        locked.push(ach);
-                    }
-                });
-                
-                // Отображаем полученные достижения
-                const earnedDiv = document.getElementById('earnedAchievements');
-                if (earned.length === 0) {
-                    earnedDiv.innerHTML = '<div style="text-align: center; grid-column: span 2;">Пока нет достижений. Продолжай учиться!</div>';
-                } else {
-                    earnedDiv.innerHTML = earned.map(ach => `
-                        <div class="achievement-card earned">
-                            <div class="achievement-icon">${ach.icon}</div>
-                            <div class="achievement-name">${ach.name}</div>
-                            <div class="achievement-desc">${ach.description}</div>
-                        </div>
-                    `).join('');
-                }
-                
-                // Отображаем недоступные достижения
-                const lockedDiv = document.getElementById('lockedAchievements');
-                if (locked.length === 0) {
-                    lockedDiv.innerHTML = '<div style="text-align: center; grid-column: span 2;">Все достижения получены! 🎉</div>';
-                } else {
-                    lockedDiv.innerHTML = locked.map(ach => `
-                        <div class="achievement-card achievement-locked">
-                            <div class="achievement-icon">${ach.icon}</div>
-                            <div class="achievement-name">${ach.name}</div>
-                            <div class="achievement-desc">${ach.description}</div>
-                            <div style="font-size: 10px; color: #999; margin-top: 8px;">🔒 Еще не получено</div>
-                        </div>
-                    `).join('');
-                }
-                
-            } catch (error) {
-                console.error('Ошибка загрузки достижений:', error);
-            }
-        }
-        
-        // ============================================
-        // ЗАГРУЗКА СТАТИСТИКИ ПОЛЬЗОВАТЕЛЯ
-        // ============================================
-        async function loadUserStats() {
-            try {
-                const { data: stats, error } = await supabaseClient
-                    .from('user_stats')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
-                
-                if (error && error.code !== 'PGRST116') throw error;
-                
-                // Получаем количество достижений
-                const { count: achievementsCount } = await supabaseClient
-                    .from('user_achievements')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', currentUser.id);
-                
-                userStats.innerHTML = `
-                    <div class="stat-item">
-                        <div class="stat-value">${stats?.total_messages || 0}</div>
-                        <div class="stat-label">📝 Сообщений</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${achievementsCount || 0}</div>
-                        <div class="stat-label">🏅 Достижений</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats?.total_minutes_studied || 0}</div>
-                        <div class="stat-label">⏱️ Минут изучения</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats?.current_streak || 0}</div>
-                        <div class="stat-label">🔥 Дней подряд</div>
-                    </div>
-                `;
-                
-            } catch (error) {
-                console.error('Ошибка загрузки статистики:', error);
-            }
-        }
-        
-        // ============================================
-        // ЗАГРУЗКА РЕЙТИНГА
-        // ============================================
-        async function loadRanking() {
-            try {
-                // Получаем всех пользователей с количеством достижений
-                const { data: userAchievements, error } = await supabaseClient
-                    .from('user_achievements')
-                    .select('user_id, achievement_id, profiles!inner(username)');
-                
+                const { data, error } = await supabase.from('profiles').select('*');
                 if (error) throw error;
                 
-                // Группируем по пользователям
-                const rankingMap = new Map();
-                userAchievements?.forEach(ua => {
-                    const userId = ua.user_id;
-                    if (!rankingMap.has(userId)) {
-                        rankingMap.set(userId, {
-                            user_id: userId,
-                            username: ua.profiles?.username || 'Пользователь',
-                            achievements: 0
-                        });
-                    }
-                    rankingMap.get(userId).achievements++;
+                let html = '<h3>Пользователи:</h3>';
+                data?.forEach(user => {
+                    const isMe = currentUser && user.id === currentUser.id;
+                    html += `<div style="padding: 10px; border-bottom: 1px solid #eee; ${isMe ? 'background:#dbeafe' : ''}">
+                        <strong>${user.username} ${isMe ? '(вы)' : ''}</strong><br>
+                        <span>${user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети'}</span>
+                    </div>`;
                 });
-                
-                // Преобразуем в массив и сортируем
-                const ranking = Array.from(rankingMap.values())
-                    .sort((a, b) => b.achievements - a.achievements);
-                
-                const rankingDiv = document.getElementById('rankingList');
-                
-                if (ranking.length === 0) {
-                    rankingDiv.innerHTML = '<div style="text-align: center;">Нет данных для рейтинга</div>';
-                    return;
-                }
-                
-                rankingDiv.innerHTML = ranking.map((user, index) => `
-                    <div class="ranking-item">
-                        <div class="rank-number ${index === 0 ? 'top-1' : index === 1 ? 'top-2' : index === 2 ? 'top-3' : ''}">
-                            ${index + 1}
-                        </div>
-                        <div class="rank-info">
-                            <div class="rank-name">${user.username} ${user.user_id === currentUser?.id ? '(вы)' : ''}</div>
-                            <div class="rank-points">${user.achievements} ${getAchievementWord(user.achievements)}</div>
-                        </div>
-                        <div class="rank-achievements">
-                            ${'🏅'.repeat(Math.min(user.achievements, 5))}
-                        </div>
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                console.error('Ошибка загрузки рейтинга:', error);
+                document.getElementById('profilesList').innerHTML = html;
+            } catch(e) {
+                console.error(e);
             }
         }
         
-        function getAchievementWord(count) {
-            if (count % 10 === 1 && count % 100 !== 11) return 'достижение';
-            if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'достижения';
-            return 'достижений';
+        async function updateStatus(status) {
+            if (!currentUser) return;
+            await supabase.from('profiles').update({ status }).eq('id', currentUser.id);
+            currentUser.status = status;
+            updateUI(currentUser);
+            loadUsers();
         }
         
-        // ============================================
-        // ОБЩИЙ ЧАТ
-        // ============================================
-        async function loadChatMessages() {
-            try {
-                const { data: messages, error } = await supabaseClient
-                    .from('chat_messages')
-                    .select('*, profiles!inner(username)')
-                    .order('created_at', { ascending: true })
-                    .limit(50);
-                
-                if (error && error.code !== '42P01') {
-                    // Если таблицы нет, создаем
-                    await createChatTable();
-                    return;
-                }
-                
-                const chatDiv = document.getElementById('chatMessages');
-                if (!messages || messages.length === 0) {
-                    chatDiv.innerHTML = '<div style="text-align: center;">Нет сообщений. Будь первым!</div>';
-                    return;
-                }
-                
-                chatDiv.innerHTML = messages.map(msg => `
-                    <div class="chat-message">
-                        <strong>${msg.profiles?.username || 'Пользователь'}</strong>: ${msg.message}
-                        <small style="color: #999; font-size: 10px;">${new Date(msg.created_at).toLocaleTimeString()}</small>
-                    </div>
-                `).join('');
-                
-                // Скроллим вниз
-                chatDiv.scrollTop = chatDiv.scrollHeight;
-                
-            } catch (error) {
-                console.error('Ошибка загрузки чата:', error);
-            }
-        }
+        // ОБРАБОТЧИКИ
+        document.getElementById('googleBtn').onclick = async () => {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href.split('#')[0] }
+            });
+            if (error) showMessage(error.message, 'error');
+        };
         
-        async function createChatTable() {
-            // Создаем таблицу chat_messages через SQL (нужно выполнить в Supabase SQL Editor)
-            console.log('Нужно создать таблицу chat_messages через SQL Editor в Supabase');
-        }
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabase.auth.signOut();
+            currentUser = null;
+            updateUI(null);
+            loadUsers();
+        };
         
-        async function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
+        document.getElementById('onlineBtn').onclick = () => updateStatus('online');
+        document.getElementById('offlineBtn').onclick = () => updateStatus('offline');
+        
+        // ОСНОВНАЯ ЛОГИКА - СЛЕДИМ ЗА ВХОДОМ
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event, session);
             
-            if (!message) return;
-            
-            try {
-                await supabaseClient
-                    .from('chat_messages')
-                    .insert([{
-                        user_id: currentUser.id,
-                        message: message
-                    }]);
-                
-                input.value = '';
-                
-                // Логируем активность для достижения "Активист"
-                await logActivity('message', { message });
-                
-                // Обновляем статистику сообщений
-                await updateMessageStats();
-                
-                // Загружаем обновленный чат
-                await loadChatMessages();
-                
-            } catch (error) {
-                console.error('Ошибка отправки:', error);
-                showMessage('Ошибка отправки сообщения', 'error');
-            }
-        }
-        
-        async function updateMessageStats() {
-            // Получаем количество сообщений пользователя
-            const { count, error } = await supabaseClient
-                .from('chat_messages')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', currentUser.id);
-            
-            if (error) return;
-            
-            // Обновляем статистику
-            await supabaseClient
-                .from('user_stats')
-                .upsert({
-                    user_id: currentUser.id,
-                    total_messages: count
-                });
-        }
-        
-        function subscribeToChat() {
-            if (chatSubscription) {
-                chatSubscription.unsubscribe();
-            }
-            
-            chatSubscription = supabaseClient
-                .channel('chat_messages')
-                .on('postgres_changes', 
-                    { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-                    () => {
-                        loadChatMessages();
-                    }
-                )
-                .subscribe();
-        }
-        
-        // ============================================
-        // УПРАВЛЕНИЕ ВХОДОМ
-        // ============================================
-        async function handleUserLogin(user) {
-            try {
-                // Проверяем/создаем профиль
-                const { data: profile, error: profileError } = await supabaseClient
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Проверяем или создаем профиль
+                const { data: existing } = await supabase
                     .from('profiles')
                     .select('*')
-                    .eq('id', user.id)
+                    .eq('id', session.user.id)
                     .single();
                 
-                if (profileError || !profile) {
-                    const newProfile = {
-                        id: user.id,
-                        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Пользователь',
+                if (!existing) {
+                    const newUser = {
+                        id: session.user.id,
+                        username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
                         status: 'online'
                     };
-                    
-                    await supabaseClient
-                        .from('profiles')
-                        .insert([newProfile]);
-                    
-                    currentUser = newProfile;
-                    
-                    // Логируем первый вход
-                    await logActivity('login', { first_time: true });
-                    
+                    await supabase.from('profiles').insert([newUser]);
+                    currentUser = newUser;
                 } else {
-                    currentUser = profile;
-                    
-                    // Обновляем статус на онлайн
-                    await supabaseClient
-                        .from('profiles')
-                        .update({ status: 'online' })
-                        .eq('id', currentUser.id);
-                    
-                    // Логируем вход
-                    await logActivity('login', {});
+                    currentUser = existing;
                 }
                 
-                // Создаем запись в статистике если нет
-                const { data: stats } = await supabaseClient
-                    .from('user_stats')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
-                
-                if (!stats) {
-                    await supabaseClient
-                        .from('user_stats')
-                        .insert([{
-                            user_id: currentUser.id
-                        }]);
-                }
-                
-                // Обновляем UI
-                userAvatar.textContent = (currentUser.username || 'U').substring(0, 2).toUpperCase();
-                userName.textContent = currentUser.username;
-                
-                mainContent.classList.remove('hidden');
-                guestMessage.classList.add('hidden');
-                googleLoginBtn.classList.add('hidden');
-                guestLoginBtn.classList.add('hidden');
+                updateUI(currentUser);
+                loadUsers();
+                showMessage(`Добро пожаловать, ${currentUser.username}!`);
+            }
+            
+            if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                updateUI(null);
+                loadUsers();
+            }
+        });
+        
+        // ЗАГРУЖАЕМ ПРИ СТАРТЕ
+        loadUsers();
+        
+        // ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ТОКЕН В URL
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            console.log('Обнаружен токен в URL, обрабатываем...');
+            // Убираем hash из URL, чтобы не мешал
+            history.replaceState(null, '', window.location.pathname);
+        }
+    </script>
+</body>
+</html>
