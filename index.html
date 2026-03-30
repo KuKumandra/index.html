@@ -34,6 +34,14 @@
         button.logout {
             background: #ef4444;
         }
+        button.online {
+            background: #4ade80;
+            color: black;
+        }
+        button.offline {
+            background: #cbd5e1;
+            color: black;
+        }
         .user-card {
             background: #f8fafc;
             padding: 15px;
@@ -64,6 +72,13 @@
         }
         .success { background: #d1fae5; color: #065f46; }
         .error { background: #fee2e2; color: #991b1b; }
+        .profile-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .current-user {
+            background: #dbeafe;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -86,8 +101,8 @@
         </div>
 
         <div id="statusControls" class="hidden">
-            <button id="onlineBtn">🟢 В сети</button>
-            <button id="offlineBtn">⚫ Не в сети</button>
+            <button id="onlineBtn" class="online">🟢 В сети</button>
+            <button id="offlineBtn" class="offline">⚫ Не в сети</button>
             <button id="logoutBtn" class="logout">🚪 Выйти</button>
         </div>
 
@@ -95,11 +110,12 @@
     </div>
 
     <script>
-        // КОНФИГУРАЦИЯ
-        const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
+        // КОНФИГУРАЦИЯ - используем другое имя переменной
+        const MY_SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
+        const MY_SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Создаем клиент с уникальным именем
+        const supabaseClient = window.supabase.createClient(MY_SUPABASE_URL, MY_SUPABASE_KEY);
         
         let currentUser = null;
         
@@ -126,13 +142,13 @@
         
         async function loadUsers() {
             try {
-                const { data, error } = await supabase.from('profiles').select('*');
+                const { data, error } = await supabaseClient.from('profiles').select('*');
                 if (error) throw error;
                 
                 let html = '<h3>Пользователи:</h3>';
                 data?.forEach(user => {
                     const isMe = currentUser && user.id === currentUser.id;
-                    html += `<div style="padding: 10px; border-bottom: 1px solid #eee; ${isMe ? 'background:#dbeafe' : ''}">
+                    html += `<div class="profile-item ${isMe ? 'current-user' : ''}">
                         <strong>${user.username} ${isMe ? '(вы)' : ''}</strong><br>
                         <span>${user.status === 'online' ? '🟢 В сети' : '⚫ Не в сети'}</span>
                     </div>`;
@@ -140,63 +156,76 @@
                 document.getElementById('profilesList').innerHTML = html;
             } catch(e) {
                 console.error(e);
+                document.getElementById('profilesList').innerHTML = 'Ошибка загрузки';
             }
         }
         
         async function updateStatus(status) {
             if (!currentUser) return;
-            await supabase.from('profiles').update({ status }).eq('id', currentUser.id);
-            currentUser.status = status;
-            updateUI(currentUser);
-            loadUsers();
+            const { error } = await supabaseClient.from('profiles').update({ status }).eq('id', currentUser.id);
+            if (!error) {
+                currentUser.status = status;
+                updateUI(currentUser);
+                loadUsers();
+                showMessage(`Статус изменен на ${status === 'online' ? 'В сети' : 'Не в сети'}`);
+            }
         }
         
         // ОБРАБОТЧИКИ
         document.getElementById('googleBtn').onclick = async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.href.split('#')[0] }
-            });
-            if (error) showMessage(error.message, 'error');
+            try {
+                const { error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.href.split('#')[0] }
+                });
+                if (error) throw error;
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
         };
         
         document.getElementById('logoutBtn').onclick = async () => {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             currentUser = null;
             updateUI(null);
             loadUsers();
+            showMessage('Вы вышли из системы', 'success');
         };
         
         document.getElementById('onlineBtn').onclick = () => updateStatus('online');
         document.getElementById('offlineBtn').onclick = () => updateStatus('offline');
         
         // ОСНОВНАЯ ЛОГИКА - СЛЕДИМ ЗА ВХОДОМ
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event:', event, session);
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event);
             
             if (event === 'SIGNED_IN' && session?.user) {
                 // Проверяем или создаем профиль
-                const { data: existing } = await supabase
+                const { data: existing, error: findError } = await supabaseClient
                     .from('profiles')
                     .select('*')
                     .eq('id', session.user.id)
-                    .single();
+                    .maybeSingle();
                 
                 if (!existing) {
                     const newUser = {
                         id: session.user.id,
-                        username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+                        username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Пользователь',
                         status: 'online'
                     };
-                    await supabase.from('profiles').insert([newUser]);
-                    currentUser = newUser;
+                    const { error: insertError } = await supabaseClient.from('profiles').insert([newUser]);
+                    if (!insertError) {
+                        currentUser = newUser;
+                    }
                 } else {
                     currentUser = existing;
                 }
                 
-                updateUI(currentUser);
-                loadUsers();
-                showMessage(`Добро пожаловать, ${currentUser.username}!`);
+                if (currentUser) {
+                    updateUI(currentUser);
+                    loadUsers();
+                    showMessage(`Добро пожаловать, ${currentUser.username}!`);
+                }
             }
             
             if (event === 'SIGNED_OUT') {
@@ -209,12 +238,13 @@
         // ЗАГРУЖАЕМ ПРИ СТАРТЕ
         loadUsers();
         
-        // ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ТОКЕН В URL
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-            console.log('Обнаружен токен в URL, обрабатываем...');
-            // Убираем hash из URL, чтобы не мешал
-            history.replaceState(null, '', window.location.pathname);
+        // ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ТОКЕН В URL (для обработки редиректа)
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            console.log('Обнаружен токен, ожидаем обработки...');
+            // Убираем hash из URL для чистоты
+            setTimeout(() => {
+                history.replaceState(null, '', window.location.pathname);
+            }, 1000);
         }
     </script>
 </body>
