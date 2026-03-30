@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов - Онлайн и время учебы</title>
+    <title>Монитор статусов</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>">
     <style>
         * {
             margin: 0;
@@ -38,37 +39,21 @@
             -webkit-text-fill-color: transparent;
         }
         
-        h2 {
-            font-size: 20px;
-            margin-bottom: 16px;
-            color: #333;
-        }
-        
-        h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: #666;
-        }
-        
         button {
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
+            padding: 12px 24px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
+            width: 100%;
+            margin: 5px 0;
         }
         
         button.google {
-            background: #db4437;
+            background: #4285f4;
         }
         
         button.logout {
@@ -111,7 +96,7 @@
         
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
             margin-top: 15px;
         }
@@ -145,15 +130,6 @@
             animation: pulse 1.5s infinite;
         }
         
-        .offline-badge {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #cbd5e1;
-            margin-right: 8px;
-        }
-        
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(1.2); }
@@ -172,8 +148,8 @@
             border-bottom: 1px solid #e9ecef;
         }
         
-        .profile-item:hover {
-            background: #f8f9fa;
+        .profile-item.current-user {
+            background: #dbeafe;
         }
         
         .profile-info {
@@ -222,18 +198,16 @@
             color: #991b1b;
         }
         
-        .timer {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            text-align: center;
-            margin: 10px 0;
-        }
-        
         .flex {
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
         }
         
         .mb-2 {
@@ -331,9 +305,8 @@
         // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
         // ============================================
         let currentUser = null;
-        let currentSessionId = null;
-        let sessionInterval = null;
         let sessionStartTime = null;
+        let sessionInterval = null;
         
         // ============================================
         // ФУНКЦИИ ДЛЯ СООБЩЕНИЙ
@@ -345,91 +318,113 @@
         }
         
         // ============================================
-        // УПРАВЛЕНИЕ СЕССИЕЙ УЧЕБЫ
+        // ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ
         // ============================================
-        async function startStudySession() {
-            if (!currentUser) return;
-            
+        async function loadUsers() {
             try {
-                // Создаем новую сессию
                 const { data, error } = await supabaseClient
-                    .from('study_sessions')
-                    .insert([{
-                        user_id: currentUser.id,
-                        start_time: new Date().toISOString()
-                    }])
-                    .select()
-                    .single();
+                    .from('profiles')
+                    .select('*')
+                    .order('username');
                 
                 if (error) throw error;
                 
-                currentSessionId = data.id;
-                sessionStartTime = new Date();
+                const onlineUsers = data?.filter(u => u.status === 'online') || [];
+                const onlineCount = onlineUsers.length;
+                document.getElementById('onlineCount').textContent = onlineCount;
                 
-                // Обновляем время начала сессии в профиле
-                await supabaseClient
-                    .from('profiles')
-                    .update({ session_start: new Date().toISOString() })
-                    .eq('id', currentUser.id);
+                // Онлайн пользователи
+                let onlineHtml = '';
+                onlineUsers.forEach(user => {
+                    const isMe = currentUser && user.id === currentUser.id;
+                    onlineHtml += `
+                        <div class="profile-item ${isMe ? 'current-user' : ''}">
+                            <div class="profile-info">
+                                <div class="profile-avatar">${(user.username || '?').substring(0,2).toUpperCase()}</div>
+                                <div><strong>${user.username} ${isMe ? '(вы)' : ''}</strong></div>
+                            </div>
+                            <span><span class="online-badge"></span> онлайн</span>
+                        </div>
+                    `;
+                });
+                document.getElementById('onlineUsersList').innerHTML = onlineHtml || '<div style="text-align: center;">Нет пользователей онлайн</div>';
                 
-                // Запускаем таймер
-                startTimer();
+                // Все пользователи
+                let allHtml = '';
+                data?.forEach(user => {
+                    const isMe = currentUser && user.id === currentUser.id;
+                    allHtml += `
+                        <div class="profile-item ${isMe ? 'current-user' : ''}">
+                            <div class="profile-info">
+                                <div class="profile-avatar">${(user.username || '?').substring(0,2).toUpperCase()}</div>
+                                <div><strong>${user.username} ${isMe ? '(вы)' : ''}</strong></div>
+                            </div>
+                            <span>${user.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'}</span>
+                        </div>
+                    `;
+                });
+                document.getElementById('allUsersList').innerHTML = allHtml || '<div style="text-align: center;">Нет пользователей</div>';
                 
-                console.log('Сессия начата:', currentSessionId);
             } catch (error) {
-                console.error('Ошибка начала сессии:', error);
+                console.error('Ошибка загрузки:', error);
             }
         }
         
-        async function endStudySession() {
-            if (!currentSessionId) return;
+        // ============================================
+        // ЗАГРУЗКА СТАТИСТИКИ
+        // ============================================
+        async function loadUserStats() {
+            if (!currentUser) return;
             
             try {
-                // Вызываем функцию завершения сессии
-                await supabaseClient.rpc('end_study_session', {
-                    session_id: currentSessionId
-                });
-                
-                // Обновляем профиль
-                await supabaseClient
+                const { data: profile, error } = await supabaseClient
                     .from('profiles')
-                    .update({ session_start: null })
-                    .eq('id', currentUser.id);
+                    .select('total_study_minutes')
+                    .eq('id', currentUser.id)
+                    .single();
                 
-                // Останавливаем таймер
-                if (sessionInterval) {
-                    clearInterval(sessionInterval);
-                    sessionInterval = null;
+                if (!error && profile) {
+                    const totalHours = Math.floor(profile.total_study_minutes / 60);
+                    const totalMins = profile.total_study_minutes % 60;
+                    document.getElementById('totalMinutes').textContent = `${totalHours}ч ${totalMins}м`;
                 }
                 
-                // Обновляем статистику
-                await loadUserStats();
+                // Получаем количество достижений
+                const { count } = await supabaseClient
+                    .from('user_achievements')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.id);
                 
-                console.log('Сессия завершена');
-                currentSessionId = null;
-                sessionStartTime = null;
+                document.getElementById('achievementsCount').textContent = count || 0;
+                
             } catch (error) {
-                console.error('Ошибка завершения сессии:', error);
+                console.error('Ошибка статистики:', error);
             }
         }
         
-        function startTimer() {
+        // ============================================
+        // ТАЙМЕР СЕССИИ
+        // ============================================
+        function startSessionTimer() {
             if (sessionInterval) clearInterval(sessionInterval);
+            
+            sessionStartTime = new Date();
             
             sessionInterval = setInterval(() => {
                 if (sessionStartTime) {
                     const now = new Date();
-                    const diffMinutes = Math.floor((now - sessionStartTime) / 60000);
-                    const seconds = Math.floor(((now - sessionStartTime) % 60000) / 1000);
-                    document.getElementById('sessionMinutes').textContent = `${diffMinutes}:${seconds.toString().padStart(2, '0')}`;
+                    const diffSeconds = Math.floor((now - sessionStartTime) / 1000);
+                    const minutes = Math.floor(diffSeconds / 60);
+                    const seconds = diffSeconds % 60;
+                    document.getElementById('sessionMinutes').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
                 }
             }, 1000);
         }
         
         // ============================================
-        // ОБНОВЛЕНИЕ СТАТУСА ПОЛЬЗОВАТЕЛЯ
+        // ОБНОВЛЕНИЕ СТАТУСА
         // ============================================
-        async function updateUserStatus(status) {
+        async function updateStatus(status) {
             if (!currentUser) return;
             
             try {
@@ -443,30 +438,126 @@
                 
                 currentUser.status = status;
                 showMessage(`Статус изменен на ${status === 'online' ? 'В сети' : 'Не в сети'}`);
-                
-                // Если пользователь вышел в офлайн, завершаем сессию
-                if (status === 'offline') {
-                    await endStudySession();
-                }
+                loadUsers();
             } catch (error) {
                 showMessage('Ошибка обновления статуса', 'error');
             }
         }
         
         // ============================================
-        // ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ
+        // ОБНОВЛЕНИЕ UI
         // ============================================
-        async function loadOnlineUsers() {
-            try {
-                const { data, error } = await supabaseClient
+        function updateUI(user) {
+            if (user) {
+                document.getElementById('mainContent').classList.remove('hidden');
+                document.getElementById('guestMessage').classList.add('hidden');
+                document.getElementById('googleBtn').classList.add('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                
+                document.getElementById('userAvatar').textContent = (user.username || 'U').substring(0,2).toUpperCase();
+                document.getElementById('userName').textContent = user.username || 'Пользователь';
+                
+                loadUserStats();
+                startSessionTimer();
+            } else {
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('guestMessage').classList.remove('hidden');
+                document.getElementById('googleBtn').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.add('hidden');
+                
+                if (sessionInterval) {
+                    clearInterval(sessionInterval);
+                    sessionInterval = null;
+                }
+            }
+        }
+        
+        // ============================================
+        // ОБРАБОТЧИКИ
+        // ============================================
+        document.getElementById('googleBtn').onclick = async () => {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href.split('#')[0] }
+            });
+            if (error) showMessage(error.message, 'error');
+        };
+        
+        document.getElementById('guestGoogleBtn').onclick = async () => {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href.split('#')[0] }
+            });
+            if (error) showMessage(error.message, 'error');
+        };
+        
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            updateUI(null);
+            loadUsers();
+        };
+        
+        document.getElementById('onlineBtn').onclick = () => updateStatus('online');
+        document.getElementById('offlineBtn').onclick = () => updateStatus('offline');
+        
+        // ============================================
+        // ОТСЛЕЖИВАНИЕ ВХОДА
+        // ============================================
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event);
+            
+            if (event === 'SIGNED_IN' && session?.user) {
+                const { data: existing } = await supabaseClient
                     .from('profiles')
                     .select('*')
-                    .eq('status', 'online')
-                    .order('username');
+                    .eq('id', session.user.id)
+                    .maybeSingle();
                 
-                if (error) throw error;
+                if (!existing) {
+                    const newUser = {
+                        id: session.user.id,
+                        username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Пользователь',
+                        status: 'online'
+                    };
+                    await supabaseClient.from('profiles').insert([newUser]);
+                    currentUser = newUser;
+                } else {
+                    currentUser = existing;
+                    await supabaseClient
+                        .from('profiles')
+                        .update({ status: 'online', last_seen: new Date().toISOString() })
+                        .eq('id', currentUser.id);
+                }
                 
-                const onlineCount = data?.length || 0;
-                document.getElementById('onlineCount').textContent = onlineCount;
-                
-                const container = document.getElementById('online
+                updateUI(currentUser);
+                loadUsers();
+                showMessage(`Добро пожаловать, ${currentUser.username}!`);
+            }
+            
+            if (event === 'SIGNED_OUT') {
+                if (currentUser) {
+                    await supabaseClient
+                        .from('profiles')
+                        .update({ status: 'offline' })
+                        .eq('id', currentUser.id);
+                }
+                currentUser = null;
+                updateUI(null);
+                loadUsers();
+            }
+        });
+        
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        loadUsers();
+        
+        // Проверяем, есть ли токен в URL
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            console.log('Токен найден, очищаем URL');
+            history.replaceState(null, '', window.location.pathname);
+        }
+    </script>
+</body>
+</html>
