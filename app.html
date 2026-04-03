@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Мой профиль</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .card { background: #f0f0f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .online { background: #4ade80; }
+        .offline { background: #cbd5e1; }
+        .logout { background: #ef4444; color: white; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen">
+    <div class="card">
+        <h2>Вход в систему</h2>
+        <button id="loginBtn">🔐 Войти через Google</button>
+        <div id="errorMsg" style="color: red; margin-top: 10px;"></div>
+    </div>
+</div>
+
+<div id="appScreen" class="hidden">
+    <div class="card">
+        <h2 id="userName"></h2>
+        <p>Статус: <span id="statusText"></span></p>
+        <p>📊 Всего минут: <span id="totalMins">0</span></p>
+        <div>
+            <button id="setOnline" class="online">🟢 В сети</button>
+            <button id="setOffline" class="offline">⚫ Не в сети</button>
+            <button id="logoutBtn" class="logout">🚪 Выйти</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>👥 Пользователи</h3>
+        <div id="usersList"></div>
+    </div>
+</div>
+
+<script>
+    // ТВОИ ДАННЫЕ
+    const MY_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
+    const MY_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
+    
+    // СОЗДАЁМ КЛИЕНТ (другое имя, чтобы не конфликтовать)
+    const client = window.supabase.createClient(MY_URL, MY_KEY);
+    
+    let currentUser = null;
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        if (el) el.innerText = msg;
+        setTimeout(() => { if (el) el.innerText = ''; }, 3000);
+    }
+
+    // Загрузка списка пользователей
+    async function loadUsers() {
+        const { data, error } = await client.from('profiles').select('*').order('username');
+        if (error) return;
+        
+        const html = data.map(u => `
+            <div style="padding: 8px; border-bottom: 1px solid #ddd; ${currentUser && u.id === currentUser.id ? 'background:#e3f2fd' : ''}">
+                <strong>${u.username}</strong> ${currentUser && u.id === currentUser.id ? '(вы)' : ''} — 
+                ${u.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'}
+            </div>
+        `).join('');
+        document.getElementById('usersList').innerHTML = html || 'Нет пользователей';
+    }
+
+    // Обновление статуса
+    async function setStatus(status) {
+        if (!currentUser) return;
+        const { error } = await client.from('profiles').update({ 
+            status, 
+            last_seen: new Date().toISOString() 
+        }).eq('id', currentUser.id);
+        
+        if (!error) {
+            currentUser.status = status;
+            document.getElementById('statusText').innerHTML = status === 'online' ? '🟢 онлайн' : '⚫ офлайн';
+            loadUsers();
+        }
+    }
+
+    // После входа
+    async function onLogin(user) {
+        // Проверяем, есть ли профиль
+        let { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        
+        if (!profile) {
+            // Создаём профиль
+            const newUser = {
+                id: user.id,
+                username: user.user_metadata?.full_name || user.email.split('@')[0],
+                status: 'online',
+                last_seen: new Date().toISOString(),
+                total_study_seconds: 0
+            };
+            await client.from('profiles').insert([newUser]);
+            profile = newUser;
+        } else {
+            // Обновляем статус
+            await client.from('profiles').update({ 
+                status: 'online', 
+                last_seen: new Date().toISOString() 
+            }).eq('id', user.id);
+            profile.status = 'online';
+        }
+        
+        currentUser = profile;
+        
+        // Показываем интерфейс
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('userName').innerHTML = profile.username;
+        document.getElementById('statusText').innerHTML = '🟢 онлайн';
+        document.getElementById('totalMins').innerHTML = Math.floor((profile.total_study_seconds || 0) / 60);
+        
+        loadUsers();
+    }
+
+    function onLogout() {
+        if (currentUser) {
+            client.from('profiles').update({ status: 'offline' }).eq('id', currentUser.id);
+        }
+        currentUser = null;
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+    }
+
+    // Кнопки
+    document.getElementById('loginBtn').onclick = async () => {
+        const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.href.split('#')[0] }
+        });
+        if (error) showError(error.message);
+    };
+    
+    document.getElementById('setOnline').onclick = () => setStatus('online');
+    document.getElementById('setOffline').onclick = () => setStatus('offline');
+    document.getElementById('logoutBtn').onclick = async () => {
+        await client.auth.signOut();
+        onLogout();
+    };
+    
+    // Следим за входом
+    client.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+            await onLogin(session.user);
+        } else if (event === 'SIGNED_OUT') {
+            onLogout();
+        }
+    });
+    
+    // Проверяем текущую сессию
+    client.auth.getSession().then(async ({ data }) => {
+        if (data.session?.user) {
+            await onLogin(data.session.user);
+        }
+    });
+</script>
+</body>
+</html>
