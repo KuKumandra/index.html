@@ -1,211 +1,169 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов</title>
+    <title>Мой профиль</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
-        button { background: #4285f4; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .card { background: #f0f0f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .online { background: #4ade80; }
+        .offline { background: #cbd5e1; }
+        .logout { background: #ef4444; color: white; }
         .hidden { display: none; }
-        .card { background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .online-dot { display: inline-block; width: 10px; height: 10px; background: green; border-radius: 50%; }
-        .user-item { padding: 8px; border-bottom: 1px solid #ddd; }
-        .current-user { background: #e3f2fd; }
     </style>
 </head>
 <body>
-    <div id="loginBlock">
-        <h1>📚 Монитор статусов</h1>
-        <button id="googleBtn">🔐 Войти через Google</button>
+
+<div id="loginScreen">
+    <div class="card">
+        <h2>Вход в систему</h2>
+        <button id="loginBtn">🔐 Войти через Google</button>
         <div id="errorMsg" style="color: red; margin-top: 10px;"></div>
     </div>
+</div>
 
-    <div id="appBlock" class="hidden">
-        <div class="card">
-            <h2 id="userName"></h2>
-            <div>Статус: <span id="userStatus"></span></div>
-            <div>📊 Всего минут: <span id="totalMinutes">0</span></div>
-            <div>⏱️ Текущая сессия: <span id="sessionTimer">0:00</span></div>
-            <div style="margin-top: 10px;">
-                <button id="onlineBtn">🟢 В сети</button>
-                <button id="offlineBtn">⚫ Не в сети</button>
-                <button id="logoutBtn" style="background:#ef4444;">🚪 Выйти</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>🟢 Сейчас онлайн (<span id="onlineCount">0</span>)</h2>
-            <div id="onlineList"></div>
-        </div>
-
-        <div class="card">
-            <h2>👥 Все пользователи</h2>
-            <div id="allUsersList"></div>
+<div id="appScreen" class="hidden">
+    <div class="card">
+        <h2 id="userName"></h2>
+        <p>Статус: <span id="statusText"></span></p>
+        <p>📊 Всего минут: <span id="totalMins">0</span></p>
+        <div>
+            <button id="setOnline" class="online">🟢 В сети</button>
+            <button id="setOffline" class="offline">⚫ Не в сети</button>
+            <button id="logoutBtn" class="logout">🚪 Выйти</button>
         </div>
     </div>
 
-    <script>
-        // ============== НАСТРОЙКИ (твои данные) ==============
-        const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
+    <div class="card">
+        <h3>👥 Пользователи</h3>
+        <div id="usersList"></div>
+    </div>
+</div>
+
+<script>
+    // ТВОИ ДАННЫЕ
+    const MY_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
+    const MY_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
+    
+    // СОЗДАЁМ КЛИЕНТ (другое имя, чтобы не конфликтовать)
+    const client = window.supabase.createClient(MY_URL, MY_KEY);
+    
+    let currentUser = null;
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        if (el) el.innerText = msg;
+        setTimeout(() => { if (el) el.innerText = ''; }, 3000);
+    }
+
+    // Загрузка списка пользователей
+    async function loadUsers() {
+        const { data, error } = await client.from('profiles').select('*').order('username');
+        if (error) return;
         
-        // Создаём клиент с уникальным именем (НЕ supabase)
-        const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const html = data.map(u => `
+            <div style="padding: 8px; border-bottom: 1px solid #ddd; ${currentUser && u.id === currentUser.id ? 'background:#e3f2fd' : ''}">
+                <strong>${u.username}</strong> ${currentUser && u.id === currentUser.id ? '(вы)' : ''} — 
+                ${u.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'}
+            </div>
+        `).join('');
+        document.getElementById('usersList').innerHTML = html || 'Нет пользователей';
+    }
+
+    // Обновление статуса
+    async function setStatus(status) {
+        if (!currentUser) return;
+        const { error } = await client.from('profiles').update({ 
+            status, 
+            last_seen: new Date().toISOString() 
+        }).eq('id', currentUser.id);
         
-        let currentUser = null;
-        let sessionInterval = null;
-        let sessionSeconds = 0;
-
-        // ============== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==============
-        function showError(msg) {
-            document.getElementById('errorMsg').innerText = msg;
-            setTimeout(() => document.getElementById('errorMsg').innerText = '', 3000);
-        }
-
-        // ============== СЕССИЯ ВРЕМЕНИ ==============
-        function startTimer() {
-            if (sessionInterval) clearInterval(sessionInterval);
-            sessionInterval = setInterval(() => {
-                sessionSeconds++;
-                const mins = Math.floor(sessionSeconds / 60);
-                const secs = sessionSeconds % 60;
-                document.getElementById('sessionTimer').innerText = `${mins}:${secs.toString().padStart(2,'0')}`;
-            }, 1000);
-        }
-
-        function stopTimer() {
-            if (sessionInterval) { clearInterval(sessionInterval); sessionInterval = null; }
-        }
-
-        // ============== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ==============
-        async function loadUsers() {
-            if (!currentUser) return;
-            const { data, error } = await _sb.from('profiles').select('*').order('username');
-            if (error) return;
-
-            // Онлайн (статус online и last_seen за последние 5 минут)
-            const now = new Date();
-            const online = data.filter(u => u.status === 'online' && 
-                (new Date(u.last_seen) > new Date(now - 5*60*1000)));
-            document.getElementById('onlineCount').innerText = online.length;
-            document.getElementById('onlineList').innerHTML = online.map(u => `
-                <div class="user-item ${u.id === currentUser.id ? 'current-user' : ''}">
-                    <strong>${u.username}</strong> ${u.id === currentUser.id ? '(вы)' : ''}
-                    <span class="online-dot"></span> онлайн
-                </div>
-            `).join('') || '<div>Нет активных пользователей</div>';
-
-            // Все пользователи
-            document.getElementById('allUsersList').innerHTML = data.map(u => `
-                <div class="user-item ${u.id === currentUser.id ? 'current-user' : ''}">
-                    <strong>${u.username}</strong> ${u.id === currentUser.id ? '(вы)' : ''}
-                    <span>${u.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'}</span>
-                </div>
-            `).join('');
-        }
-
-        // ============== ОБНОВЛЕНИЕ СТАТУСА ==============
-        async function setStatus(status) {
-            if (!currentUser) return;
-            await _sb.from('profiles').update({ 
-                status, 
-                last_seen: new Date().toISOString() 
-            }).eq('id', currentUser.id);
+        if (!error) {
             currentUser.status = status;
-            document.getElementById('userStatus').innerHTML = status === 'online' ? '🟢 онлайн' : '⚫ офлайн';
-            if (status === 'offline') {
-                stopTimer();
-                sessionSeconds = 0;
-                document.getElementById('sessionTimer').innerText = '0:00';
-            } else {
-                startTimer();
-            }
+            document.getElementById('statusText').innerHTML = status === 'online' ? '🟢 онлайн' : '⚫ офлайн';
             loadUsers();
         }
+    }
 
-        // ============== ЗАГРУЗКА ПРОФИЛЯ ==============
-        async function loadProfile(userId) {
-            const { data, error } = await _sb.from('profiles').select('*').eq('id', userId).single();
-            if (data) return data;
-            return null;
+    // После входа
+    async function onLogin(user) {
+        // Проверяем, есть ли профиль
+        let { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        
+        if (!profile) {
+            // Создаём профиль
+            const newUser = {
+                id: user.id,
+                username: user.user_metadata?.full_name || user.email.split('@')[0],
+                status: 'online',
+                last_seen: new Date().toISOString(),
+                total_study_seconds: 0
+            };
+            await client.from('profiles').insert([newUser]);
+            profile = newUser;
+        } else {
+            // Обновляем статус
+            await client.from('profiles').update({ 
+                status: 'online', 
+                last_seen: new Date().toISOString() 
+            }).eq('id', user.id);
+            profile.status = 'online';
         }
+        
+        currentUser = profile;
+        
+        // Показываем интерфейс
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('userName').innerHTML = profile.username;
+        document.getElementById('statusText').innerHTML = '🟢 онлайн';
+        document.getElementById('totalMins').innerHTML = Math.floor((profile.total_study_seconds || 0) / 60);
+        
+        loadUsers();
+    }
 
-        // ============== ПОСЛЕ ВХОДА ==============
-        async function onLogin(user) {
-            // Проверяем/создаём профиль
-            let profile = await loadProfile(user.id);
-            if (!profile) {
-                const newProfile = {
-                    id: user.id,
-                    username: user.user_metadata?.full_name || user.email.split('@')[0],
-                    status: 'online',
-                    last_seen: new Date().toISOString(),
-                    total_study_seconds: 0
-                };
-                await _sb.from('profiles').insert([newProfile]);
-                profile = newProfile;
-            } else {
-                await _sb.from('profiles').update({ 
-                    status: 'online', 
-                    last_seen: new Date().toISOString() 
-                }).eq('id', user.id);
-                profile.status = 'online';
-            }
-
-            currentUser = profile;
-            document.getElementById('loginBlock').classList.add('hidden');
-            document.getElementById('appBlock').classList.remove('hidden');
-            document.getElementById('userName').innerHTML = profile.username;
-            document.getElementById('userStatus').innerHTML = '🟢 онлайн';
-            document.getElementById('totalMinutes').innerText = Math.floor((profile.total_study_seconds || 0) / 60);
-            
-            sessionSeconds = 0;
-            startTimer();
-            loadUsers();
+    function onLogout() {
+        if (currentUser) {
+            client.from('profiles').update({ status: 'offline' }).eq('id', currentUser.id);
         }
+        currentUser = null;
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+    }
 
-        function onLogout() {
-            if (currentUser) {
-                _sb.from('profiles').update({ status: 'offline' }).eq('id', currentUser.id);
-            }
-            stopTimer();
-            currentUser = null;
-            document.getElementById('loginBlock').classList.remove('hidden');
-            document.getElementById('appBlock').classList.add('hidden');
-        }
-
-        // ============== ОБРАБОТЧИКИ КНОПОК ==============
-        document.getElementById('googleBtn').onclick = async () => {
-            const { error } = await _sb.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.href.split('#')[0] }
-            });
-            if (error) showError(error.message);
-        };
-
-        document.getElementById('onlineBtn').onclick = () => setStatus('online');
-        document.getElementById('offlineBtn').onclick = () => setStatus('offline');
-        document.getElementById('logoutBtn').onclick = async () => {
-            await _sb.auth.signOut();
+    // Кнопки
+    document.getElementById('loginBtn').onclick = async () => {
+        const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.href.split('#')[0] }
+        });
+        if (error) showError(error.message);
+    };
+    
+    document.getElementById('setOnline').onclick = () => setStatus('online');
+    document.getElementById('setOffline').onclick = () => setStatus('offline');
+    document.getElementById('logoutBtn').onclick = async () => {
+        await client.auth.signOut();
+        onLogout();
+    };
+    
+    // Следим за входом
+    client.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+            await onLogin(session.user);
+        } else if (event === 'SIGNED_OUT') {
             onLogout();
-        };
-
-        // ============== СЛЕЖЕНИЕ ЗА ВХОДОМ ==============
-        _sb.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                await onLogin(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                onLogout();
-            }
-        });
-
-        // ============== ПРОВЕРКА ПРИ ЗАГРУЗКЕ ==============
-        _sb.auth.getSession().then(async ({ data }) => {
-            if (data.session?.user) {
-                await onLogin(data.session.user);
-            }
-        });
-    </script>
+        }
+    });
+    
+    // Проверяем текущую сессию
+    client.auth.getSession().then(async ({ data }) => {
+        if (data.session?.user) {
+            await onLogin(data.session.user);
+        }
+    });
+</script>
 </body>
 </html>
