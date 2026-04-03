@@ -382,7 +382,7 @@
     // ======================== НАСТРОЙКИ SUPABASE ==========================
     const SUPABASE_URL = 'https://gptbqzvbeehcmrijdxlz.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_xBXWyJ7XEGgE9104I3e0Mg_6qZsHmv9';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let currentSessionId = null;
